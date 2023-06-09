@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Update Name Field in JSONs</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #drop_zone {
+      width: 300px;
+      height: 200px;
+      padding: 10px;
+      border: 2px dashed #bbb;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    #title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    #input_zone {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #input_zone input, #input_zone label {
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">Update Name Field in JSONs</div>
+  <div id="input_zone">
+    <input type="text" id="name_prefix" placeholder="Name prefix">
+    <input type="checkbox" id="include_filename" checked>
+    <label for="include_filename">Include filename</label>
+  </div>
+  <div id="drop_zone">Drop your .zip here</div>
+  <script>
+    let dropZone = document.getElementById('drop_zone');
+
+    dropZone.ondragover = function(event) {
+      event.preventDefault();
+    };
+
+    dropZone.ondrop = function(event) {
+      event.preventDefault();
+      processFiles(event.dataTransfer.files);
+    };
+
+    function processFiles(files) {
+      if (files.length == 0) return;
+
+      let file = files[0];
+      if (file.name.split('.').pop() !== 'zip') {
+        alert('Please upload a .zip file');
+        return;
+      }
+
+      let zip = new JSZip();
+      zip.loadAsync(file)
+        .then(function(contents) {
+          let newZip = new JSZip();
+          let promiseList = [];
+          let name_prefix = document.getElementById('name_prefix').value;
+          let include_filename = document.getElementById('include_filename').checked;
+
+          Object.keys(contents.files).forEach(function(filename) {
+            let fileData = contents.files[filename];
+            if (!fileData.dir) {
+              console.log(`Processing file: ${filename}`);
+              let promise = fileData.async("string").then(function(content) {
+                try {
+                  let jsonContent = JSON.parse(content);
+                  let newName = filename.split('/').pop().replace(/\.[^/.]+$/, ""); // Extract filename from full path
+                  jsonContent['name'] = include_filename ? `${name_prefix}${newName}` : name_prefix;
+                  newZip.file(filename, JSON.stringify(jsonContent, null, 4));
+                } catch (e) {
+                  console.error(`Error processing file: ${filename}`);
+                }
+              });
+              promiseList.push(promise);
+            }
+          });
+          return Promise.all(promiseList).then(() => newZip);
+        })
+        .then(function(newZip) {
+          newZip.generateAsync({type:"blob"})
+            .then(function(content) {
+              let timestamp = Date.now();
+              console.log(`Saving processed zip as processed-${timestamp}.zip`);
+              saveAs(content, `processed-${timestamp}.zip`);
+            });
+        });
+    }
+  </script>
+</body>
+</html>
