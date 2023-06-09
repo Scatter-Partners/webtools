@@ -5,16 +5,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
   <style>
-	#drop_zone {
-	  width: 300px;
-	  height: 200px;
-	  padding: 10px;
-	  border: 2px dashed #bbb;
-	  border-radius: 20px;
-	  text-align: center;
-	  font-size: 16px;
-	  margin: 0 auto;
-	}
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #drop_zone {
+      width: 300px;
+      height: 200px;
+      padding: 10px;
+      border: 2px dashed #bbb;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 20px;
+    }
     #title {
       text-align: center;
       font-size: 24px;
@@ -24,7 +30,7 @@
       text-align: center;
       margin-bottom: 20px;
     }
-    #input_zone input {
+    #input_zone input, #input_zone label {
       margin: 5px;
     }
   </style>
@@ -32,8 +38,8 @@
 <body>
   <div id="title">Update Image Field in JSONs</div>
   <div id="input_zone">
-    <input type="text" id="cid_value" placeholder="CID value">
-    <input type="text" id="filetype_value" placeholder="Filetype value">
+    <input type="text" id="cid" placeholder="CID">
+    <input type="text" id="filetype" placeholder="File type (default: .png)">
   </div>
   <div id="drop_zone">Drop your .zip here</div>
   <script>
@@ -62,9 +68,9 @@
         .then(function(contents) {
           let newZip = new JSZip();
           let promiseList = [];
-          let cid_value = document.getElementById('cid_value').value;
-          let filetype_value = document.getElementById('filetype_value').value;
-          filetype_value = filetype_value.startsWith('.') ? filetype_value : '.' + filetype_value;
+          let cid = document.getElementById('cid').value;
+          let filetype = document.getElementById('filetype').value;
+          filetype = filetype !== '' ? (filetype.startsWith('.') ? filetype : '.' + filetype) : '.png';
 
           Object.keys(contents.files).forEach(function(filename) {
             let fileData = contents.files[filename];
@@ -73,9 +79,9 @@
               let promise = fileData.async("string").then(function(content) {
                 try {
                   let jsonContent = JSON.parse(content);
-                  let newName = filename.replace(/\.[^/.]+$/, "");
-                  jsonContent['image'] = `ipfs://${cid_value}/${newName}${filetype_value}`;
-                  newZip.file(filename, JSON.stringify(jsonContent, null, 4)); // pretty-print with 4 space tabs
+                  let baseFilename = filename.split('/').pop().replace(/\.[^/.]+$/, "");
+                  jsonContent['image'] = `ipfs://${cid}/${baseFilename}${filetype}`;
+                  newZip.file(filename, JSON.stringify(jsonContent, null, 4));
                 } catch (e) {
                   console.error(`Error processing file: ${filename}`);
                 }
@@ -94,7 +100,6 @@
             });
         });
     }
- 
   </script>
 </body>
 </html>
