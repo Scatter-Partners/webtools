@@ -72,12 +72,13 @@
   <div id="title">Snapshot Multiple Collections</div>
   <div id="text-container">
     <label id="input-label" for="api-key-input"><a href="https://www.alchemy.com/">Alchemy</a> API Key:</label>
-    <input id="api-key-input" type="text" placeholder="Enter Alchemy API key">
+    <input id="api-key-input" type="text" placeholder="Enter Alchemy API key" value="DhddRwiV1Am5ZbEJE7RUniQ2CQmxD5Nt"> 
     <label id="input-label" for="collection-addresses-input">Collection Addresses (one per line):</label>
     <textarea id="collection-addresses-input" rows="20" cols="40"></textarea>
   </div>
   <button id="snapshot-button">Get Multi-Snapshot</button>
-  <textarea id="log-box" readonly></textarea>
+  <textarea id="log-box" readonly>Swap the Alchemy API key with your own if the current one is not working.
+  </textarea>
   <script>
     let snapshotButton = document.getElementById('snapshot-button');
     let apiKeyInput = document.getElementById('api-key-input');
