@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snapshot Multiple Collections</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    #text-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #input-label {
+      font-weight: bold;
+    }
+    #api-key-input,
+    #collection-addresses-input {
+      margin-top: 10px;
+      padding: 5px;
+      width: 350px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+    }
+    #snapshot-button {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      background-color: #007bff;
+      cursor: pointer;
+    }
+    #snapshot-button[disabled] {
+      background-color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">Snapshot Multiple Collections</div>
+  <div id="text-container">
+    <label id="input-label" for="api-key-input"><a href="https://www.alchemy.com/">Alchemy</a> API Key:</label>
+    <input id="api-key-input" type="text" placeholder="Enter Alchemy API key">
+    <label id="input-label" for="collection-addresses-input">Collection Addresses (one per line):</label>
+    <textarea id="collection-addresses-input" rows="20" cols="40"></textarea>
+  </div>
+  <button id="snapshot-button">Get Multi-Snapshot</button>
+	<script>
+	  let snapshotButton = document.getElementById('snapshot-button');
+	  let apiKeyInput = document.getElementById('api-key-input');
+	  let collectionAddressesInput = document.getElementById('collection-addresses-input');
+
+	  snapshotButton.onclick = async function() {
+		snapshotButton.disabled = true;
+		snapshotButton.innerText = 'Please wait...';
+		await snapshotCollections();
+		snapshotButton.disabled = false;
+		snapshotButton.innerText = 'Get Multi-Snapshot';
+	  };
+
+	  async function snapshotCollections() {
+		let apiKey = apiKeyInput.value.trim();
+		let collectionAddresses = collectionAddressesInput.value.trim().split('\n');
+		let mergedLines = [];
+
+		for (let address of collectionAddresses) {
+		  const fetchURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getOwnersForCollection?contractAddress=${address}&withTokenBalances=false`;
+		  let response = await fetch(fetchURL);
+		  let data = await response.json();
+		  mergedLines.push(...data.ownerAddresses);
+		}
+		
+		const uniqueLines = [...new Set(mergedLines)];
+		const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
+		saveAs(blob, `output-${Date.now()}.txt`);
+	  }
+	</script>
+
+</body>
+</html>
