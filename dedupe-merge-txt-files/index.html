@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dedupe and Merge .txt Files</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #drop_zone {
+      width: 300px;
+      height: 200px;
+      padding: 10px;
+      border: 2px dashed #bbb;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    #title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    #checkbox-container {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">Dedupe and Merge .txt Files</div>
+  <div id="checkbox-container">
+    <input type="checkbox" id="ignore-case-checkbox" checked>
+    <label for="ignore-case-checkbox">Ignore case when deduplicating</label>
+    <input type="checkbox" id="resolve-ens-checkbox" checked>
+    <label for="resolve-ens-checkbox">Resolve ENS</label>
+  </div>
+  <div id="drop_zone">Drop your .txt files or .zip file here</div>
+  <script>
+    let dropZone = document.getElementById('drop_zone');
+    let ignoreCaseCheckbox = document.getElementById('ignore-case-checkbox');
+    let resolveEnsCheckbox = document.getElementById('resolve-ens-checkbox');
+
+    let provider = new ethers.providers.getDefaultProvider();
+
+    dropZone.ondragover = function(event) {
+      event.preventDefault();
+    };
+
+    dropZone.ondrop = async function(event) {
+      event.preventDefault();
+      await processFiles(Array.from(event.dataTransfer.files).sort((a, b) => a.name.localeCompare(b.name)));
+    };
+
+    async function processFiles(files) {
+      let mergedLines = [];
+      let totalLinesBeforeDedupe = 0;
+
+      for (let file of files) {
+        if (file.name.endsWith('.txt')) {
+          let text = await file.text();
+          let lines = text.split('\n');
+          console.log(`File ${file.name} contains ${lines.length} lines.`);
+          totalLinesBeforeDedupe += lines.length;
+          mergedLines.push(...lines);
+        } else if (file.name.endsWith('.zip')) {
+          let zip = await JSZip.loadAsync(file);
+          for (let filename in zip.files) {
+            if (filename.endsWith('.txt')) {
+              let file = zip.file(filename);
+              let content = await file.async('text');
+              let lines = content.split('\n');
+              console.log(`File ${filename} contains ${lines.length} lines.`);
+              totalLinesBeforeDedupe += lines.length;
+              mergedLines.push(...lines);
+            }
+          }
+        }
+      }
+
+      if (ignoreCaseCheckbox.checked) {
+        mergedLines = mergedLines.map(line => line.toLowerCase());
+      }
+
+	  mergedLines = mergedLines.map(line => line.trimEnd());
+
+      if (resolveEnsCheckbox.checked) {
+		console.log(`Resolve ENS Checked`);
+		const promises = mergedLines.map(async (line, i) => {
+		  if (!ethers.utils.isAddress(line)) {
+			console.log(`Resolving ${line}`);
+			try {
+			  const address = await provider.resolveName(line);
+			  if (address) {
+				console.log(`ENS name ${line} resolved to ${address}`);
+				return address;
+			  } else {
+				console.warn(`Failed to resolve ENS name ${line}: No address returned.`);
+				return line;
+			  }
+			} catch (err) {
+			  console.error(`Failed to resolve ENS name ${line}: ${err}`);
+			  return line;
+			}
+		  } else {
+			return line;
+		  }
+		});
+
+
+        mergedLines = await Promise.all(promises);
+      }
+	  
+	  mergedLines = mergedLines.map(line => ethers.utils.getAddress(line)); // convert to proper case
+	  
+      const uniqueLinesSet = new Set(mergedLines);
+      const uniqueLines = [...uniqueLinesSet];
+
+      console.log(`Removed ${totalLinesBeforeDedupe - uniqueLines.length} duplicate lines.`);
+      
+      const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
+      saveAs(blob, `output-${Date.now()}.txt`);
+      console.log(`Final file contains ${uniqueLines.length} unique lines.`);
+    }
+  </script>
+</body>
+</html>
