@@ -43,6 +43,16 @@
     #snapshot-button[disabled] {
       background-color: #ccc;
     }
+    #log-box {
+      margin-top: 20px;
+      padding: 5px;
+      width: 350px;
+      height: 200px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -54,36 +64,68 @@
     <textarea id="collection-addresses-input" rows="20" cols="40"></textarea>
   </div>
   <button id="snapshot-button">Get Multi-Snapshot</button>
-	<script>
-	  let snapshotButton = document.getElementById('snapshot-button');
-	  let apiKeyInput = document.getElementById('api-key-input');
-	  let collectionAddressesInput = document.getElementById('collection-addresses-input');
+  <textarea id="log-box" readonly></textarea>
+  <script>
+    let snapshotButton = document.getElementById('snapshot-button');
+    let apiKeyInput = document.getElementById('api-key-input');
+    let collectionAddressesInput = document.getElementById('collection-addresses-input');
+    let logBox = document.getElementById('log-box');
 
-	  snapshotButton.onclick = async function() {
-		snapshotButton.disabled = true;
-		snapshotButton.innerText = 'Please wait...';
-		await snapshotCollections();
-		snapshotButton.disabled = false;
-		snapshotButton.innerText = 'Get Multi-Snapshot';
-	  };
+    snapshotButton.onclick = async function() {
+      let apiKey = apiKeyInput.value.trim();
+      let collectionAddresses = collectionAddressesInput.value.trim().split('\n');
 
-	  async function snapshotCollections() {
-		let apiKey = apiKeyInput.value.trim();
-		let collectionAddresses = collectionAddressesInput.value.trim().split('\n');
-		let mergedLines = [];
+      if (!apiKey) {
+        alert('Please enter your Alchemy API key.');
+        return;
+      }
 
-		for (let address of collectionAddresses) {
-		  const fetchURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getOwnersForCollection?contractAddress=${address}&withTokenBalances=false`;
-		  let response = await fetch(fetchURL);
-		  let data = await response.json();
-		  mergedLines.push(...data.ownerAddresses);
-		}
-		
-		const uniqueLines = [...new Set(mergedLines)];
-		const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
-		saveAs(blob, `output-${Date.now()}.txt`);
-	  }
-	</script>
+      if (!collectionAddresses[0]) {
+        alert('Please enter at least one collection address.');
+        return;
+      }
 
+      snapshotButton.disabled = true;
+      snapshotButton.innerText = 'Please wait...';
+
+      logBox.value += 'Snapshotting collections...\n';
+
+      try {
+        await snapshotCollections(apiKey, collectionAddresses);
+        logBox.value += 'Snapshot complete.\n';
+      } catch (error) {
+        logBox.value += 'Error snapshotting collections: ' + error + '\n';
+      }
+
+      snapshotButton.disabled = false;
+      snapshotButton.innerText = 'Get Multi-Snapshot';
+    };
+
+    async function snapshotCollections(apiKey, collectionAddresses) {
+      let mergedLines = [];
+
+      for (let address of collectionAddresses) {
+        const fetchURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getOwnersForCollection?contractAddress=${address}&withTokenBalances=false`;
+
+        logBox.value += 'Fetching owners for ' + address + '...\n';
+
+        let response = await fetch(fetchURL);
+
+        if (!response.ok) {
+          throw new Error('Received HTTP ' + response.status + ' from Alchemy API.');
+        }
+
+        let data = await response.json();
+        mergedLines.push(...data.ownerAddresses);
+
+        logBox.value += 'Fetched ' + data.ownerAddresses.length + ' owner(s) for ' + address + '.\n';
+      }
+
+      const uniqueLines = [...new Set(mergedLines)];
+      const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
+
+      saveAs(blob, `output-${Date.now()}.txt`);
+    }
+  </script>
 </body>
 </html>
