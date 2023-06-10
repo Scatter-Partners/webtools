@@ -30,6 +30,30 @@
     #checkbox-container {
       margin-bottom: 20px;
     }
+    #custom-endpoint-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #custom-endpoint-label {
+      font-weight: bold;
+    }
+    #custom-endpoint-input {
+      margin-top: 10px;
+      padding: 5px;
+      width: 250px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+    }
+    #processing-status {
+      font-weight: bold;
+      margin-top: 10px;
+      display: none;
+    }
+    .green {
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -40,11 +64,18 @@
     <input type="checkbox" id="resolve-ens-checkbox" checked>
     <label for="resolve-ens-checkbox">Resolve ENS</label>
   </div>
+  <div id="custom-endpoint-container">
+    <label id="custom-endpoint-label" for="custom-endpoint-input">Custom RPC Endpoint:</label>
+    <input id="custom-endpoint-input" type="text" placeholder="Enter custom RPC endpoint key">
+  </div>
   <div id="drop_zone">Drop your .txt files or .zip file here</div>
+  <div id="processing-status">Please wait...</div>
   <script>
     let dropZone = document.getElementById('drop_zone');
     let ignoreCaseCheckbox = document.getElementById('ignore-case-checkbox');
     let resolveEnsCheckbox = document.getElementById('resolve-ens-checkbox');
+    let customEndpointInput = document.getElementById('custom-endpoint-input');
+    let processingStatus = document.getElementById('processing-status');
 
     let provider = new ethers.providers.getDefaultProvider();
 
@@ -54,12 +85,21 @@
 
     dropZone.ondrop = async function(event) {
       event.preventDefault();
+      processingStatus.style.display = 'block';
+      processingStatus.innerText = 'Please wait...';
       await processFiles(Array.from(event.dataTransfer.files).sort((a, b) => a.name.localeCompare(b.name)));
     };
 
     async function processFiles(files) {
       let mergedLines = [];
       let totalLinesBeforeDedupe = 0;
+
+      // Check if custom RPC endpoint is provided and valid
+      let customEndpoint = customEndpointInput.value.trim();
+      const rpcEndpointRegex = /^(https?:\/\/)?(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
+      if (rpcEndpointRegex.test(customEndpoint)) {
+        provider = new ethers.providers.JsonRpcProvider(customEndpoint);
+      }
 
       for (let file of files) {
         if (file.name.endsWith('.txt')) {
@@ -112,7 +152,6 @@
 		  }
 		});
 
-
         mergedLines = await Promise.all(promises);
       }
 	  
@@ -126,6 +165,9 @@
       const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
       saveAs(blob, `output-${Date.now()}.txt`);
       console.log(`Final file contains ${uniqueLines.length} unique lines.`);
+      
+      processingStatus.innerText = 'Done!';
+      processingStatus.className = 'green';
     }
   </script>
 </body>
