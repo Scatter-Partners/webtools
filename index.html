@@ -6,21 +6,54 @@
 <style>
     body {
         font-family: 'Roboto', sans-serif;
+        margin: 0;
+        background: #f5f5f5;
+        color: #333;
+    }
+    .container {
+        width: 80%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #ffffff94;
+        box-shadow: 0px 0px 20px rgba(0,0,0,0.1);
+    }
+    .image {
+        font-family: "Helvetica";
+        position: fixed;
+        right: 0px;
+        bottom: -5px;
+        z-index: -1;
+    }
+    p {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    p:last-child {
+        border-bottom: none;
     }
 </style>
 </head>
 <body>
-<h1>Scatter Partners Webtools</h1>
-<p>These tools are meant to help you launch collections on <a href="https://scatter.art/">Scatter</a> (though random people may find these tools useful, they were designed for specific use cases in mind). Check the <a href="https://docs.scatter.art/">Scatter Docs</a> for more information.</p>
-<p>Most of these tools do not upload files anywhere, they work entirely within your local browser. Tools with the 🌐 icon use external services.</p>
-<p>Use at your own risk. ALWAYS verify results of these tools yourself as proper.</p>
-<p><a href="./remove-file-extensions/">Remove File Extensions</a> : Upload a .zip file, get a new .zip back with all file extensions removed. Useful for removing file extensions from JSON files.</p>
-<p><a href="./search-and-replace/">Search and Replace</a> : Upload a .zip file, get a new .zip back with all files treated as text and with the search term replaced with the replace term.</p>
-<p><a href="./update-image-fields/">Update Image Fields</a> : Upload a .zip file, get a new .zip back with all files treated as JSON, the image fields will be updated to use the CID and filename extension in the two fields. If you did not update your images folder directly (as in, it's in a sub-folder of the IPFS CID) you can include the subfolder name after the CID in the CID field with a forward slash inbetween.</p>
-<p><a href="./update-name-fields/">Update Name Fields</a> : Upload a .zip file, get a new .zip back with all files treated as JSON, the name fields will be updated to use the prefix and the filename if the checkbox is checked. If you want an output like "Myname #123" you should keep the filename checked and set your prefix to "Myname #" with the # in it.</p>
-<p><a href="./dedupe-merge-txt-files/">Dedupe and Merge .txt Files 🌐</a> : Upload a .zip file or a selection of .txt files, get a new .txt file back with: all ENS (.eth) lines resolved, all duplicates removed, all addresses converted to proper case, sorted list. Some optional settings should be kept enabled in most cases. This tool is useful for combining multiple whitelist snapshots / lists of .eth addresses together into a single whitelist .txt file.</p>
-<p><a href="./snapshot-multiple-collections/">Snapshot Multiple Collections 🌐</a> : Enter an <a href="https://www.alchemy.com/">Alchemy</a> API key along with a list of collection addresses to get an output .txt file which is all wallets that own any of the collections in the snapshots.</p>
-<p><a href="./sign-verify-messages/">Sign and Verify 🌐</a> : Connect a wallet to be able to sign and verify messages. This is useful to have people prove they own a wallet by having them sign any kind of challenge message. They can give you the result, and then you can verify it.</p>
-<p><a href="./refresh-opensea-metadata/">Refresh OpenSea Metadata 🌐</a> : Allows you to force refresh a full collection on OpenSea or a range of IDs. If you need to refresh Scatter metadata open a ticket in our Discord and we will do it for you.</p>
+<div class="container">
+    <h1>Scatter Partners Webtools</h1>
+	<p>These tools are meant to help you launch collections on <a href="https://scatter.art/">Scatter</a> (though random people may find these tools useful, they were designed for specific use cases in mind). Check the <a href="https://docs.scatter.art/">Scatter Docs</a> for more information.</p>
+	<p>Most of these tools do not upload files anywhere, they work entirely within your local browser. Tools with the 🌐 icon use external services.</p>
+	<p>Use at your own risk. ALWAYS verify results of these tools yourself as proper.</p>
+	<p><a href="./remove-file-extensions/">Remove File Extensions</a> : Upload a .zip file, get a new .zip back with all file extensions removed. Useful for removing file extensions from JSON files.</p>
+	<p><a href="./search-and-replace/">Search and Replace</a> : Upload a .zip file, get a new .zip back with all files treated as text and with the search term replaced with the replace term.</p>
+	<p><a href="./update-image-fields/">Update Image Fields</a> : Upload a .zip file, get a new .zip back with all files treated as JSON, the image fields will be updated to use the CID and filename extension in the two fields. If you did not update your images folder directly (as in, it's in a sub-folder of the IPFS CID) you can include the subfolder name after the CID in the CID field with a forward slash inbetween.</p>
+	<p><a href="./update-name-fields/">Update Name Fields</a> : Upload a .zip file, get a new .zip back with all files treated as JSON, the name fields will be updated to use the prefix and the filename if the checkbox is checked. If you want an output like "Myname #123" you should keep the filename checked and set your prefix to "Myname #" with the # in it.</p>
+	<p><a href="./dedupe-merge-txt-files/">Dedupe and Merge .txt Files 🌐</a> : Upload a .zip file or a selection of .txt files, get a new .txt file back with: all ENS (.eth) lines resolved, all duplicates removed, all addresses converted to proper case, sorted list. Some optional settings should be kept enabled in most cases. This tool is useful for combining multiple whitelist snapshots / lists of .eth addresses together into a single whitelist .txt file.</p>
+	<p><a href="./snapshot-multiple-collections/">Snapshot Multiple Collections 🌐</a> : Enter an <a href="https://www.alchemy.com/">Alchemy</a> API key along with a list of collection addresses to get an output .txt file which is all wallets that own any of the collections in the snapshots.</p>
+	<p><a href="./sign-verify-messages/">Sign and Verify 🌐</a> : Connect a wallet to be able to sign and verify messages. This is useful to have people prove they own a wallet by having them sign any kind of challenge message. They can give you the result, and then you can verify it.</p>
+	<p><a href="./refresh-opensea-metadata/">Refresh OpenSea Metadata 🌐</a> : Allows you to force refresh a full collection on OpenSea or a range of IDs. If you need to refresh Scatter metadata open a ticket in our Discord and we will do it for you.</p>
+</div>
 
+<div class="image">
+	<script src="images/mascots/mascots.js"></script>
+</div>
 
+</body>
+</html>
