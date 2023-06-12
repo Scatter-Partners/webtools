@@ -5,7 +5,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
   <style>
     body {
-	  font-family: 'Roboto', sans-serif;
+      font-family: 'Roboto', sans-serif;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
@@ -31,12 +31,16 @@
       font-weight: bold;
     }
     #api-key-input,
-    #collection-addresses-input {
+    #collection-addresses-input,
+    #block-number-input {
       margin-top: 10px;
       padding: 5px;
       width: 350px;
       border: 1px solid #bbb;
       border-radius: 5px;
+    }
+    #include-balance-checkbox {
+      margin-top: 10px;
     }
     #snapshot-button {
       padding: 10px;
@@ -59,17 +63,16 @@
       overflow: auto;
       white-space: pre-wrap;
     }
-	#sticky-link {
-	  position: fixed;
-	  top: 10px;
-	  left: 10px;
-	  background-color: white;
-	  padding: 5px;
-	  border-radius: 5px;
-	  text-decoration: underline;
-	  color: #ff3d00;
-	}
-	
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: white;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #ff3d00;
+    }
   </style>
 </head>
 <body>
@@ -81,6 +84,10 @@
     <input id="api-key-input" type="text" placeholder="Enter Alchemy API key" value="DhddRwiV1Am5ZbEJE7RUniQ2CQmxD5Nt"> 
     <label id="input-label" for="collection-addresses-input">Collection Addresses (one per line):</label>
     <textarea id="collection-addresses-input" rows="20" cols="40"></textarea>
+    <label id="input-label" for="block-number-input">Block Number:</label>
+    <input id="block-number-input" type="text" placeholder="Enter Block Number">
+    <label id="input-label" for="include-balance-checkbox">Include token balance:</label>
+    <input id="include-balance-checkbox" type="checkbox">
   </div>
   <button id="snapshot-button">Get Multi-Snapshot</button>
   <textarea id="log-box" readonly>Swap the Alchemy API key with your own if the current one is not working.
@@ -89,11 +96,15 @@
     let snapshotButton = document.getElementById('snapshot-button');
     let apiKeyInput = document.getElementById('api-key-input');
     let collectionAddressesInput = document.getElementById('collection-addresses-input');
+    let blockNumberInput = document.getElementById('block-number-input');
+    let includeBalanceCheckbox = document.getElementById('include-balance-checkbox');
     let logBox = document.getElementById('log-box');
 
     snapshotButton.onclick = async function() {
       let apiKey = apiKeyInput.value.trim();
       let collectionAddresses = collectionAddressesInput.value.trim().split('\n');
+      let blockNumber = blockNumberInput.value.trim();
+      let includeBalance = includeBalanceCheckbox.checked;
 
       if (!apiKey) {
         alert('Please enter your Alchemy API key.');
@@ -111,7 +122,7 @@
       logBox.value += 'Snapshotting collections...\n';
 
       try {
-        await snapshotCollections(apiKey, collectionAddresses);
+        await snapshotCollections(apiKey, collectionAddresses, blockNumber, includeBalance);
         logBox.value += 'Snapshot complete.\n';
       } catch (error) {
         logBox.value += 'Error snapshotting collections: ' + error + '\n';
@@ -121,31 +132,41 @@
       snapshotButton.innerText = 'Get Multi-Snapshot';
     };
 
-    async function snapshotCollections(apiKey, collectionAddresses) {
-      let mergedLines = [];
+	async function snapshotCollections(apiKey, collectionAddresses, blockNumber, includeBalance) {
+	  let mergedLines = [];
 
-      for (let address of collectionAddresses) {
-        const fetchURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getOwnersForCollection?contractAddress=${address}&withTokenBalances=false`;
+	  for (let address of collectionAddresses) {
+		const fetchURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getOwnersForCollection?contractAddress=${address}&blockNumber=${blockNumber}&withTokenBalances=${includeBalance}`;
 
-        logBox.value += 'Fetching owners for ' + address + '...\n';
+		logBox.value += 'Fetching owners for ' + address + '...\n';
 
-        let response = await fetch(fetchURL);
+		let response = await fetch(fetchURL);
 
-        if (!response.ok) {
-          throw new Error('Received HTTP ' + response.status + ' from Alchemy API.');
-        }
+		if (!response.ok) {
+		  throw new Error('Received HTTP ' + response.status + ' from Alchemy API.');
+		}
 
-        let data = await response.json();
-        mergedLines.push(...data.ownerAddresses);
+		let data = await response.json();
+		let ownerAddresses = data.ownerAddresses;
+		if (includeBalance) {
+		  ownerAddresses = ownerAddresses.map(owner => {
+			const totalBalance = owner.tokenBalances.reduce((total, token) => total + token.balance, 0);
+			return `${owner.ownerAddress},${totalBalance}`;
+		  });
+		} else {
+		  ownerAddresses = ownerAddresses.map(owner => owner.ownerAddress);
+		}
+		mergedLines.push(...ownerAddresses);
 
-        logBox.value += 'Fetched ' + data.ownerAddresses.length + ' owner(s) for ' + address + '.\n';
-      }
+		logBox.value += 'Fetched ' + ownerAddresses.length + ' owner(s) for ' + address + '.\n';
+	  }
 
-      const uniqueLines = [...new Set(mergedLines)];
-      const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
+	  const uniqueLines = [...new Set(mergedLines)];
+	  const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
 
-      saveAs(blob, `output-${Date.now()}.txt`);
-    }
+	  saveAs(blob, `output-${Date.now()}.txt`);
+	}
+
   </script>
 </body>
 </html>
