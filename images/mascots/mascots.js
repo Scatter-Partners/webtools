@@ -7,6 +7,11 @@ var random_images_array = [
 "gun.gif",
 "hamterdumpy.gif",
 "hamterpat.gif",
+"wory.png",
+"woow.png",
+"frie.png",
+"funy.png",
+"hapy.png",
 ];
 
 path = 'images/mascots/'; 
