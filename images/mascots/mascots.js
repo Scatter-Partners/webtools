@@ -12,6 +12,8 @@ var random_images_array = [
 "frie.png",
 "funy.png",
 "hapy.png",
+"no_fumo.png",
+"jimmy.png",
 ];
 
 path = 'images/mascots/'; 
