@@ -147,14 +147,14 @@
 		}
 
 		let data = await response.json();
-		let ownerAddresses = data.ownerAddresses;
+		let ownerAddresses;
 		if (includeBalance) {
-		  ownerAddresses = ownerAddresses.map(owner => {
+		  ownerAddresses = data.ownerAddresses.map(owner => {
 			const totalBalance = owner.tokenBalances.reduce((total, token) => total + token.balance, 0);
 			return `${owner.ownerAddress},${totalBalance}`;
 		  });
 		} else {
-		  ownerAddresses = ownerAddresses.map(owner => owner.ownerAddress);
+		  ownerAddresses = data.ownerAddresses;  // Just assign directly if no balance is requested
 		}
 		mergedLines.push(...ownerAddresses);
 
@@ -166,6 +166,7 @@
 
 	  saveAs(blob, `output-${Date.now()}.txt`);
 	}
+
 
   </script>
 </body>
