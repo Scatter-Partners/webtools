@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Unrevealed JSONs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #input_zone {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #input_zone input, #input_zone label {
+            margin: 5px;
+        }
+        #sticky-link {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+            text-decoration: underline;
+            color: #ff3d00;
+        }
+        #progress {
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <a id="sticky-link" href="../">Scatter Partners Webtools</a>
+    <div id="title">Generate Unrevealed JSONs</div>
+    <div id="input_zone">
+        <label for="protocol">Protocol:</label>
+        <input type="text" id="protocol" value="ipfs://"><br>
+        <label for="cid">CID / Domain:</label>
+        <input type="text" id="cid"><br>
+        <label for="image-filename">Image Filename (optional):</label>
+        <input type="text" id="image-filename"><br>
+        <label for="start-id">Start ID:</label>
+        <input type="number" id="start-id"><br>
+        <label for="end-id">End ID:</label>
+        <input type="number" id="end-id"><br>
+        <label for="name-prefix">Name Prefix:</label>
+        <input type="text" id="name-prefix"><br>
+        <label for="include-id">Include ID in Name:</label>
+        <input type="checkbox" id="include-id"><br>
+        <label for="description">Description:</label>
+        <input type="text" id="description"><br>
+        <label for="external-url">External URL (optional):</label>
+        <input type="text" id="external-url"><br>
+        <button id="generate-button" onclick="generateUnrevealedJSONs()">Generate and Download JSONs (.zip)</button>
+        <p id="progress"></p>
+    </div>
+    <script>
+    function generateUnrevealedJSONs() {
+        const button = document.getElementById('generate-button');
+        const progress = document.getElementById('progress');
+        button.disabled = true;
+        button.innerText = 'Please Wait...';
+
+        const protocol = document.getElementById('protocol').value;
+        const cid = document.getElementById('cid').value;
+        const startId = parseInt(document.getElementById('start-id').value);
+        const endId = parseInt(document.getElementById('end-id').value);
+        const totalIds = endId - startId + 1;
+
+        const namePrefix = document.getElementById('name-prefix').value;
+        const description = document.getElementById('description').value;
+
+        const imageFilename = document.getElementById('image-filename').value;
+        const includeId = document.getElementById('include-id').checked;
+        const externalUrl = document.getElementById('external-url').value;
+
+        const zip = new JSZip();
+
+        const generate = (i) => {
+            if (i > endId) {
+                progress.innerText = '100% generated (zipping files now, just a moment)';
+                zip.generateAsync({type: 'blob'}).then((content) => {
+                    const url = URL.createObjectURL(content);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'unrevealed-jsons.zip';
+                    link.click();
+                    button.disabled = false;
+                    button.innerText = 'Generate and Download JSONs (.zip)';
+                    progress.style.color = 'green';
+                    progress.innerText = 'Done!';
+                });
+                return;
+            }
+
+            const data = {
+                name: `${namePrefix}${includeId ? ' #' + i : ''}`,
+                description: description,
+                image: `${protocol}${cid}/${imageFilename}`,
+            };
+            if (externalUrl) {
+                data.external_url = externalUrl;
+            }
+            const fileContent = JSON.stringify(data, null, 2);
+            zip.file(`${i}`, fileContent);
+
+            let percentComplete = Math.floor(((i - startId) / totalIds) * 100);
+            progress.innerText = `${percentComplete}% generated`;
+
+            setTimeout(() => generate(i + 1), 0);
+        }
+
+        generate(startId);
+    }
+    </script>
+</body>
+</html>

@@ -5,8 +5,6 @@ var random_images_array = [
 "Kitty-Kaki-Smug3.gif",
 "devukittysmol.gif",
 "gun.gif",
-"hamterdumpy.gif",
-"hamterpat.gif",
 "wory.png",
 "woow.png",
 "frie.png",
