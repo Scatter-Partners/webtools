@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean JSONs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body class="container mt-3">
+    <h1>Clean JSONs</h1>
+    <form id="form">
+        <div class="form-group">
+            <label for="file">Upload a .zip of JSON files:</label>
+            <input type="file" class="form-control" id="file" accept=".zip" style="width: initial; height: initial;">
+        </div>
+		<p>Some generators are meant for other chains and their metadata isn't useful for ETH NFTs. Many generators insert unnecessary metadata. This tool can help you remove these fields from all JSON files inside of a .zip file.</p>
+        <h3>Fields to remove:</h3>
+		<div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="remove-json-extension" checked>
+            <label class="form-check-label" for="remove-json-extension">Remove .json file extension</label>
+        </div>		
+        <div id="fields">
+            <!-- Default fields will be appended here -->
+        </div>		
+
+		<div id="log" class="mt-3"></div>
+		<br>
+        <button id="addField" type="button" class="btn btn-primary">+</button>
+        <button type="submit" class="btn btn-primary">Clean and Download JSONs (.zip)</button>
+    </form>
+	<br><br>
+    <script>
+    // Default fields to remove
+    const defaultFields = ["imageHash", "dna", "edition", "date", "custom_fields", 
+                           "file_url", "id", "seller_fee_basis_points", "compiler",
+                           "properties", "collection"];
+
+    // Function to create a new field row
+    function createFieldRow(value) {
+        const group = document.createElement('div');
+        group.className = 'input-group mb-3';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control';
+        input.value = value;
+        group.appendChild(input);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-outline-danger';
+        button.textContent = '-';
+        button.addEventListener('click', () => {
+            group.remove();
+        });
+        const append = document.createElement('div');
+        append.className = 'input-group-append';
+        append.appendChild(button);
+        group.appendChild(append);
+
+        document.getElementById('fields').appendChild(group);
+    }
+
+    // Append default fields
+    defaultFields.forEach(createFieldRow);
+
+    document.getElementById('form').addEventListener('submit', (e) => {
+		e.preventDefault();
+
+		const file = document.getElementById('file').files[0];
+		if (!file) {
+			alert('Please select a file before clicking "Clean and Download".');
+			return;
+		}
+
+		const removeExtension = document.getElementById('remove-json-extension').checked;
+		const fields = Array.from(document.querySelectorAll('#fields .input-group')).map((group) => {
+			return group.querySelector('input').value;
+		});
+		const log = document.getElementById('log');
+
+        log.innerHTML = 'Processing... please wait! 😊';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const zip = new JSZip();
+            const newZip = new JSZip();  // Create a new ZIP to store cleaned files
+
+            zip.loadAsync(e.target.result).then((zipFiles) => {
+                Object.values(zipFiles.files).forEach((zipEntry) => {
+                    if (zipEntry.dir) return;
+
+                    zipEntry.async('text').then((fileContent) => {
+                        let data;
+                        try {
+                            data = JSON.parse(fileContent);
+                        } catch (error) {
+                            log.innerHTML += `Error parsing JSON from file "${zipEntry.name}": ${error}<br>`;
+                            return;
+                        }
+
+                        fields.forEach((field) => {
+                            delete data[field];
+                        });
+
+                        let filename = zipEntry.name;
+                        if (removeExtension && filename.endsWith('.json')) {
+                            filename = filename.slice(0, -5);
+                        }
+
+                        newZip.file(filename, JSON.stringify(data, null, 2));  // Add cleaned files to new ZIP
+                    });
+                });
+
+                setTimeout(() => { // Allow time for all the file processing to finish
+                    newZip.generateAsync({type: 'blob'}).then((content) => {
+                        const url = URL.createObjectURL(content);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'clean-jsons.zip';
+                        link.click();
+                        log.innerHTML = 'ZIP file created and download initiated.<br>';
+                    });
+                }, 1000);
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('addField').addEventListener('click', () => createFieldRow(''));
+    </script>
+</body>
+</html>
