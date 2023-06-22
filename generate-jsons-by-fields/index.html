@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate JSONs by Fields</title>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+	<style>
+		body {
+		  font-family: 'Roboto', sans-serif;
+		}
+	</style>	
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.2/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .generation, .trait {
+            margin: 10px 0;
+            border: 1px solid black;
+            padding: 10px;
+        }
+        .trait input {
+            width: 50%;
+        }
+    </style>
+	<style>
+		body {
+		  display: flex;
+		  flex-direction: column;
+		  align-items: center;
+		  padding: 20px;
+		}
+		#title {
+		  text-align: center;
+		  font-size: 24px;
+		  font-weight: bold;
+		}
+		#sticky-link {
+		  position: fixed;
+		  top: 10px;
+		  left: 10px;
+		  background-color: white;
+		  padding: 5px;
+		  border-radius: 5px;
+		  text-decoration: underline;
+		  color: #ff3d00;
+		}
+	</style>	
+</head>
+<body>
+	<a id="sticky-link" href="https://scatter-partners.github.io/webtools/">Scatter Partners Webtools</a>
+    <div id="generations">
+    </div>
+    <button onclick="addGeneration()">Add Generation</button>
+    <label>Include #ID in name: <input type="checkbox" id="include-id"></label>
+    <label>Shuffle JSONs: <input type="checkbox" id="shuffle"></label>
+    <label>Random Seed: <input type="text" id="seed" value="123"></label>
+    <button onclick="generate()">Generate JSONs</button>
+    <p id="progress"></p>
+    <script>
+        let generations = 1;
+        let traits = [1];
+        function addGeneration() {
+            const generation = document.createElement('div');
+            generation.className = 'generation';
+            generation.id = 'generation-' + generations;
+            generation.innerHTML = '<label>Name: <input type="text" class="name"></label><br> ' +
+                                   '<label>Image: <input type="text" class="image"></label><br> ' +
+                                   '<label>Quantity: <input type="number" class="quantity" value="1"></label><br> ' +
+                                   '<label>Description: <input type="text" class="description" style="width: 300px;"></label><br> ' +
+                                   '<div>Traits:</div> ' +
+                                   '<div class="traits"></div> ' +
+                                   '<button onclick="addTrait(' + generations + ')">Add Trait</button> ' +
+                                   '<button onclick="removeGeneration(' + generations + ')">Remove Generation</button>';
+            document.getElementById('generations').appendChild(generation);
+            traits.push(0);
+            addTrait(generations);
+            generations++;
+        }
+        function addTrait(generation) {
+            const trait = document.createElement('div');
+            trait.className = 'trait';
+            trait.id = 'generation-' + generation + '-trait-' + traits[generation];
+            trait.innerHTML = '<label>Name: <input type="text" class="trait-name"></label><br> ' +
+                              '<label>Value: <input type="text" class="trait-value"></label> ' +
+                              '<button onclick="removeTrait(' + generation + ', ' + traits[generation] + ')">Remove Trait</button>';
+            document.getElementById('generation-' + generation).getElementsByClassName('traits')[0].appendChild(trait);
+            traits[generation]++;
+        }
+        function removeGeneration(generation) {
+            document.getElementById('generation-' + generation).remove();
+        }
+        function removeTrait(generation, trait) {
+            document.getElementById('generation-' + generation + '-trait-' + trait).remove();
+        }
+        function generate() {
+            let jsons = [];
+            for (let generation = 0; generation < generations; generation++) {
+                const generationDiv = document.getElementById('generation-' + generation);
+                if (!generationDiv) {
+                    continue;
+                }
+                const name = generationDiv.getElementsByClassName('name')[0].value;
+                const image = generationDiv.getElementsByClassName('image')[0].value;
+                const quantity = generationDiv.getElementsByClassName('quantity')[0].value;
+                const description = generationDiv.getElementsByClassName('description')[0].value;
+                const traitDivs = generationDiv.getElementsByClassName('trait');
+                for (let i = 0; i < quantity; i++) {
+                    let json = {
+                        "name": name + (document.getElementById('include-id').checked ? ' #' + (jsons.length + 1) : ''),
+                        "description": description,
+                        "image": image,
+                    };
+                    let attributes = [];
+                    for (let j = 0; j < traitDivs.length; j++) {
+                        const traitName = traitDivs[j].getElementsByClassName('trait-name')[0].value;
+                        const traitValue = traitDivs[j].getElementsByClassName('trait-value')[0].value;
+                        if (traitName && traitValue) {
+                            attributes.push({
+                                "trait_type": traitName,
+                                "value": traitValue
+                            });
+                        }
+                    }
+                    if (attributes.length > 0) {
+                        json["attributes"] = attributes;
+                    }
+                    jsons.push(json);
+                }
+            }
+            if (document.getElementById('shuffle').checked) {
+                const seed = document.getElementById('seed').value;
+                Math.seedrandom(seed);
+                jsons = _.shuffle(jsons);
+                if (document.getElementById('include-id').checked) {
+                    for (let i = 0; i < jsons.length; i++) {
+                        jsons[i]["name"] = jsons[i]["name"].substring(0, jsons[i]["name"].lastIndexOf(' #') + 2) + (i + 1);
+                    }
+                }
+            }
+            let zip = new JSZip();
+            for (let i = 0; i < jsons.length; i++) {
+                zip.file(i + 1, JSON.stringify(jsons[i], null, 4));
+            }
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                saveAs(content, "jsons.zip");
+				document.getElementById('progress').innerText = 'Ready!';
+            });
+            document.getElementById('progress').innerText = 'Generating and downloading...';
+        }
+    </script>
+</body>
+</html>
