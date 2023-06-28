@@ -85,10 +85,12 @@
   </style>
 </head>
 <body>
-	<p style="background-color: #ff000021; padding: 10px;">This tool currently does not work as OpenSea recently added a requirement for API keys. We will make a new tool in the future to replace this one.</p>
+<p style="background-color: #ff000021; padding: 10px; width: 300px">To use this tool, you must <a href="https://docs.opensea.io/reference/api-keys">request an API key from OpenSea</a>. If the link there does not work, open a ticket requesting a key. If you don't get a response within a week, try requesting your ticket to be escalated in their Discord.</p>
   <a id="sticky-link" href="../">Scatter Partners Webtools</a>
   <div id="title">Refresh OpenSea Metadata</div>
   <div id="text-container">
+    <label id="input-label" for="api-key-input">API Key:</label>
+    <input id="api-key-input" type="text" placeholder="Enter your API Key">
     <label id="input-label" for="collection-input">Collection Address:</label>
     <input id="collection-input" type="text" placeholder="Enter collection address (0x...)">
     <label id="input-label" for="start-id-input">Start ID:</label>
@@ -104,6 +106,7 @@
   <pre id="log" readonly></pre>
   <script>
     let refreshButton = document.getElementById('refresh-button');
+    let apiKeyInput = document.getElementById('api-key-input');
     let collectionInput = document.getElementById('collection-input');
     let startIdInput = document.getElementById('start-id-input');
     let endIdInput = document.getElementById('end-id-input');
@@ -122,18 +125,23 @@
     };
 
     async function refreshMetadata() {
+      let apiKey = apiKeyInput.value.trim();
       let collection = collectionInput.value.trim();
       let startId = parseInt(startIdInput.value.trim());
       let endId = parseInt(endIdInput.value.trim());
       let waitTime = parseFloat(waitTimeInput.value.trim());
 
       for (let id = startId; id <= endId; id++) {
-        let url = `https://api.opensea.io/api/v1/asset/${collection}/${id}?force_update=true`;
+        let url = `https://api.opensea.io/v2/chain/ethereum/contract/${collection}/nfts/${id}/refresh`;
         log.textContent += `Refreshing metadata for ID ${id}\n`;
         log.scrollTop = log.scrollHeight;
         try {
           let response = await fetch(url, {
-            headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0;Win64) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36'}
+            method: 'POST',
+            headers: {
+              'X-API-KEY': apiKey,
+              'Content-Type': 'application/json'
+            }
           });
           if (!response.ok) throw new Error(`HTTP error ${response.status}`);
           log.textContent += `Refreshed metadata for ID ${id}\n`;
