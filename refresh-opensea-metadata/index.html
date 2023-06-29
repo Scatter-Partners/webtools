@@ -91,6 +91,8 @@
   <div id="text-container">
     <label id="input-label" for="api-key-input">API Key:</label>
     <input id="api-key-input" type="text" placeholder="Enter your API Key">
+    <label id="input-label" for="chain-input">Chain:</label>
+    <input id="chain-input" type="text" placeholder="Chain" value="ethereum">	
     <label id="input-label" for="collection-input">Collection Address:</label>
     <input id="collection-input" type="text" placeholder="Enter collection address (0x...)">
     <label id="input-label" for="start-id-input">Start ID:</label>
@@ -107,6 +109,7 @@
   <script>
     let refreshButton = document.getElementById('refresh-button');
     let apiKeyInput = document.getElementById('api-key-input');
+	let chainInput = document.getElementById('chain-input');
     let collectionInput = document.getElementById('collection-input');
     let startIdInput = document.getElementById('start-id-input');
     let endIdInput = document.getElementById('end-id-input');
@@ -126,13 +129,14 @@
 
     async function refreshMetadata() {
       let apiKey = apiKeyInput.value.trim();
+	  let chain = chainInput.value.trim();
       let collection = collectionInput.value.trim();
       let startId = parseInt(startIdInput.value.trim());
       let endId = parseInt(endIdInput.value.trim());
       let waitTime = parseFloat(waitTimeInput.value.trim());
 
       for (let id = startId; id <= endId; id++) {
-        let url = `https://api.opensea.io/v2/chain/ethereum/contract/${collection}/nfts/${id}/refresh`;
+        let url = `https://api.opensea.io/v2/chain/${chain}/contract/${collection}/nfts/${id}/refresh`;
         log.textContent += `Refreshing metadata for ID ${id}\n`;
         log.scrollTop = log.scrollHeight;
         try {
