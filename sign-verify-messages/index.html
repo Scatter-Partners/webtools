@@ -1,16 +1,32 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Message Signer and Verifier</title>
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
-	<style>
-		body {
+ <head>
+  <title>
+   Message Signer and Verifier
+  </title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet"/>
+  <style>
+   body {
 		  font-family: 'Roboto', sans-serif;
 		}
-	</style>	
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
-    <style>
-        .green {
+	
+#centered-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-left: 100px;  /* Making sure the centered content does not overlap the sticky link */
+}
+
+#copy-message-link-button.copied {
+    background-color: #4CAF50; /* green */
+    color: white;
+    border: none;
+}
+  </style>
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript">
+  </script>
+  <style>
+   .green {
             color: green;
         }
         .red {
@@ -24,32 +40,60 @@
 		  border-radius: 5px;
 		  text-decoration: underline;
 		  color: #ff3d00;
-		}			
-    </style>
-</head>
-<body>
-	<a id="sticky-link" href="../">Scatter Partners Webtools</a>
-	<br>
-    <h1>Message Signer and Verifier</h1>
-
-    <button id="connect-button">Connect Wallet</button>
-
-    <div id="sign-message">
-        <h2>Sign Message</h2>
-        <textarea id="message-to-sign" rows="4" cols="50" placeholder="Connect with your wallet and then enter your message here."></textarea><br>
-        <button id="sign-button" disabled>Sign Message</button><br><br>
-        <textarea id="signed-message" rows="4" cols="50" readonly placeholder="The signed data will appear here."></textarea>
+		}
+  </style>
+ </head>
+ <body>
+  <a href="../" id="sticky-link">
+   Scatter Partners Webtools
+  </a>
+  <div id="centered-content">
+   <br/>
+   <h1>
+    Message Signer and Verifier
+   </h1>
+   <button id="connect-button">
+    Connect Wallet
+   </button>
+   <div id="sign-message">
+    <h2>
+     Sign Message
+    </h2>
+    <textarea cols="50" id="message-to-sign" placeholder="Connect with your wallet and then enter your message here." rows="4"></textarea>
+    <br/>
+    <button disabled="" id="sign-button">
+     Sign Message
+    </button>
+    <button id="copy-message-link-button">
+     Copy Message Link
+    </button>
+    <br/>
+    <br/>
+    <textarea cols="50" id="signed-message" placeholder="The signed data will appear here." readonly="" rows="4"></textarea>
+	<br/>
+    <button id="copy-signed-message-button">
+     Copy to Clipboard
+    </button>
+    <br/>
+   </div>
+   <div id="verify-message">
+    <h2>
+     Verify Message
+    </h2>
+    <textarea cols="50" id="message-to-verify" placeholder="Enter the same kind of data created with signing to verify it is valid." rows="4"></textarea>
+    <br/>
+    <button id="paste-from-clipboard-button">
+     Paste from Clipboard
+    </button>
+    <button disabled="" id="verify-button">
+     Verify Message
+    </button>
+	<br/><br/>
+    <div id="verification-result" readonly="" style="width:390px; word-wrap: break-word;">
     </div>
-
-    <div id="verify-message">
-        <h2>Verify Message</h2>
-        <textarea id="message-to-verify" rows="4" cols="50" placeholder="Enter the same kind of data created with signing to verify it is valid."></textarea><br>
-        <button id="verify-button" disabled>Verify Message</button>
-        <div id="verification-result" readonly></div>
-    </div>
-
-    <script>
-        let provider;
+   </div>
+   <script>
+    let provider;
         let signer;
 
         document.getElementById('connect-button').addEventListener('click', async () => {
@@ -132,6 +176,71 @@
                 document.getElementById('verification-result').classList.add("red");
             }
         }
-    </script>
-</body>
+   </script>
+  </div>
+  <script>
+   // Convert text to base64
+function textToBase64(text) {
+    return window.btoa(unescape(encodeURIComponent(text)));
+}
+
+// Convert base64 to text
+function base64ToText(base64) {
+    return decodeURIComponent(escape(window.atob(base64)));
+}
+
+document.getElementById('copy-message-link-button').addEventListener('click', function() {
+    let messageText = document.getElementById('message-to-sign').value;
+    let encodedMessage = textToBase64(messageText);
+    let baseURL = window.location.origin + window.location.pathname;
+    let link = baseURL + "?message=" + encodedMessage;
+    navigator.clipboard.writeText(link);
+    
+    // Change button text and style
+    let button = document.getElementById('copy-message-link-button');
+    button.textContent = "Copied to Clipboard!";
+    button.classList.add("copied");
+    
+    // Revert button text and style after 2 seconds
+    setTimeout(function() {
+        button.textContent = "Copy Message Link";
+        button.classList.remove("copied");
+    }, 2000);
+});
+
+// On page load, check for the message parameter and decode if present
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedMessage = urlParams.get('message');
+    if (encodedMessage) {
+        document.getElementById('message-to-sign').value = base64ToText(encodedMessage);
+    }
+});
+
+document.getElementById('copy-signed-message-button').addEventListener('click', function() {
+    let signedMessage = document.getElementById('signed-message').value;
+    navigator.clipboard.writeText(signedMessage);
+    
+    // Change button text and style
+    let button = document.getElementById('copy-signed-message-button');
+    button.textContent = "Copied to Clipboard!";
+    button.classList.add("copied");
+    
+    // Revert button text and style after 2 seconds
+    setTimeout(function() {
+        button.textContent = "Copy to Clipboard";
+        button.classList.remove("copied");
+    }, 2000);
+});
+
+document.getElementById('paste-from-clipboard-button').addEventListener('click', async function() {
+    try {
+        let clipboardText = await navigator.clipboard.readText();
+        document.getElementById('message-to-verify').value = clipboardText;
+    } catch (err) {
+        console.error('Failed to read clipboard contents:', err);
+    }
+});
+  </script>
+ </body>
 </html>
