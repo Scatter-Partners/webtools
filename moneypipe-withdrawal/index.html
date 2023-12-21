@@ -1,0 +1,110 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="moneypipe buffer2" />
+    <meta
+      name="twitter:description"
+      content="create a group to collect money and let members withdraw their share"
+    />
+    <meta
+      name="twitter:image"
+      content="https://buffer2.moneypipe.xyz/buffer_poster.png"
+    />
+    <meta property="og:url" content="https://buffer2.moneypipe.xyz" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="moneypipe buffer2" />
+    <meta
+      property="og:description"
+      content="create a group to collect money and let members withdraw their share"
+    />
+    <meta
+      property="og:image"
+      content="https://buffer2.moneypipe.xyz/buffer_poster.png"
+    />
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@3.0.0/dist/web3.min.js"></script>
+    <script src="https://unpkg.com/moneypipe@0.0.50/dist/moneypipe.js"></script>
+    <script src="constants.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link href="/style.css" rel="stylesheet" />
+
+    <script>
+      let web3;
+
+      if (
+        typeof window !== "undefined" &&
+        typeof window.ethereum !== "undefined"
+      ) {
+        web3 = new Web3(window.ethereum);
+        // Request account access if needed
+        window.ethereum.enable();
+      } else {
+        // We are on the server *OR* the user is not running metamask
+        const provider = new Web3.providers.WebsocketProvider(
+          "wss://mainnet.infura.io/ws/v3/a0c47124ee964d399ee1cedb26eb5c2c"
+        );
+        web3 = new Web3(provider);
+      }
+      var account;
+      var buffer = new Moneypipe.buffer2({
+        web3: web3,
+        network: Constants.net,
+      });
+      console.log(web3);
+      console.log(buffer); // Add this line
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          console.log("starting");
+          let account = await buffer.current_account();
+          let groups2 = await buffer.find({ creator: account });
+          console.log(account);
+          console.log(groups2);
+          let g = [];
+          let limit = 5;
+          for (let i = 0; i < groups2.length; i++) {
+            let addr = groups2[i];
+            console.log("addr", addr);
+            try {
+              let cid = await buffer.cid(addr);
+              g.push(addr);
+              let a = document.createElement("a");
+              a.setAttribute("href", "group.html#address=" + addr);
+              a.innerHTML = `${addr} <b id="_${addr}"></b>`;
+              document.querySelector(".items").appendChild(a);
+            } catch (e) {
+              console.log("ERROR", e);
+              limit = i;
+              break;
+            }
+          }
+          document.querySelector(".loading").classList.add("hidden");
+
+          for (let i = 0; i <= limit; i++) {
+            let addr = groups2[i];
+            try {
+              let merklescript = await buffer.merklescript(addr);
+              document.querySelector("#_" + addr).innerHTML =
+                merklescript.title;
+            } catch (e) {
+              break;
+            }
+          }
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="loading light">
+        <i class="fa-solid fa-angle-up fa-flip"></i> loading...
+      </div>
+      <div class="items"></div>
+    </div>
+  </body>
+</html>
