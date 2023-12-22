@@ -1,5 +1,6 @@
 <html>
   <head>
+	<title>Moneypipe Withdrawl Webtool</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="moneypipe buffer2" />
@@ -24,7 +25,7 @@
     />
     <script src="libraries/web3.min.js"></script>
     <script src="libraries/moneypipe.js"></script>
-    <script src="libraries/constants.js"></script>
+    <script src="constants.js"></script>
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css"
       rel="stylesheet"
@@ -105,12 +106,31 @@
         margin: 0.5em;
         text-align: center;
       }
+	  .highlight {
+		background-color: yellow;
+	  }
     </style>
   </head>
   <body>
     <nav>
-      <a href="../">webtools</a>
+      <a href="../">Scatter Webtools</a>
       <div id="Branding">MoneyPipe Withdrawl Webtool</div>
+	  <p>As the old MoneyPipe domain has expired and the original developer gone MIA, Scatter is hosting this static version so that you can withdraw your funds easily. We now recommend <a href="https://docs.scatter.art/docs/creators/splits">Splits</a> for managing withdraw splits with your team, and recommend you migrate to this for any splits tied to royalties.</p>
+	  <p><b>Warning! As the old moneypipe.xyz domain has expired, it should no longer be trusted. Do not attempt to use it in the future.</b></p>
+	  <p>Connect with your wallet to this page and then you should see any moneypipes you have deployed. If you do not see any moneypipes, try going to its address directly.</p>
+	  <p>You can convert old links from <span class="highlight">https://buffer2.moneypipe.xyz/ethereum/group#address=0x000...000</span> to <span class="highlight"><span id="current_site"></span>group#address=0x000...000</span></p>
+	  
+<script>
+  // Get the current site and path
+  const currentSite = window.location.origin + window.location.pathname;
+
+  // Get the span element
+  const currentSiteSpan = document.getElementById("current_site");
+
+  // Add the current site and path to the span
+  currentSiteSpan.textContent = currentSite;
+</script>	  
+
     </nav>
     <div class="container">
       <div class="loading light">

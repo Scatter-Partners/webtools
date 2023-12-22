@@ -1,5 +1,6 @@
 <html>
 <head>
+<title>Moneypipe Withdrawl Webtool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="moneypipe buffer2" />
@@ -10,20 +11,20 @@
 <meta property="og:title" content="moneypipe buffer2" />
 <meta property="og:description" content="create a group to collect money and let members withdraw their share" />
 <meta property="og:image" content="https://buffer2.moneypipe.xyz/buffer_poster.png" />
-<link href="libraries/font-awesome.all.min.css" rel="stylesheet">
-<script src="libraries/bignumber.js"></script>
-<script src="libraries/ipfsh.min.js"></script>
-<script src="libraries/merklescript.min.js"></script>
-<script src="libraries/web3.min.js"></script>
-<script src="libraries/loader.js"></script>
-<script src="libraries/chart.js"></script>
-<script src="libraries/chartjs-plugin-datalabels@2.0.0"></script>
-<script src="libraries/qrcode.js"></script>
-<script src="libraries/randomColor.min.js"></script>
-<script src="libraries/handlebars.min.js"></script>
-<script src="libraries/moneypipe.js"></script>
-<script src="libraries/constants.js"></script>
-<link href="style.css" rel="stylesheet">
+<link href="../libraries/font-awesome.all.min.css" rel="stylesheet">
+<script src="../libraries/bignumber.js"></script>
+<script src="../libraries/ipfsh.min.js"></script>
+<script src="../libraries/merklescript.min.js"></script>
+<script src="../libraries/web3.min.js"></script>
+<script src="../libraries/loader.js"></script>
+<script src="../libraries/chart.js"></script>
+<script src="../libraries/chartjs-plugin-datalabels@2.0.0"></script>
+<script src="../libraries/qrcode.js"></script>
+<script src="../libraries/randomColor.min.js"></script>
+<script src="../libraries/handlebars.min.js"></script>
+<script src="../libraries/moneypipe.js"></script>
+<script src="../constants.js"></script>
+<link href="../style.css" rel="stylesheet">
 <script id="template" type="text/x-handlebars-template">
   <input class='account' type='text' placeholder='address'>
   <input class='value' type='number' placeholder='split portion (1, 10, 100, ...)'>
@@ -224,9 +225,42 @@ document.addEventListener("DOMContentLoaded", async () => {
   })
 })
 </script>
+    <style>
+      #branding {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin: 0.5em;
+        text-align: center;
+      }
+	  .highlight {
+		background-color: #696969;
+	  }
+	  a {
+			color: gold;
+		}
+    </style>
+
 </head>
 <body>
 <header>
+      <a href="../../">Scatter Webtools</a>
+      <div id="Branding">MoneyPipe Withdrawl Webtool</div>
+	  <p>As the old MoneyPipe domain has expired and the original developer gone MIA, Scatter is hosting this static version so that you can withdraw your funds easily. We now recommend <a href="https://docs.scatter.art/docs/creators/splits">Splits</a> for managing withdraw splits with your team, and recommend you migrate to this for any splits tied to royalties.</p>
+	  <p><b>Warning! As the old moneypipe.xyz domain has expired, it should no longer be trusted. Do not attempt to use it in the future.</b></p>
+	  <p>Connect with your wallet to this page and then you should see any moneypipes you have deployed. If you do not see any moneypipes, try going to its address directly.</p>
+	  <p>You can convert old links from <span class="highlight">https://buffer2.moneypipe.xyz/ethereum/group#address=0x000...000</span> to <span class="highlight"><span id="current_site"></span>group#address=0x000...000</span></p>
+	  
+<script>
+  // Get the current site and path
+  const currentSite = window.location.origin + window.location.pathname;
+
+  // Get the span element
+  const currentSiteSpan = document.getElementById("current_site");
+
+  // Add the current site and path to the span
+  currentSiteSpan.textContent = currentSite;
+</script>		  
+
   <h1 id='title'></h1>
   <div id='addr'></div>
   <div id='chart'></div>
