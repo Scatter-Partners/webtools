@@ -1,0 +1,315 @@
+<html>
+<head>
+<title>Moneypipe Withdrawl Webtool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="moneypipe buffer2" />
+<meta name="twitter:description" content="collect money and let members withdraw their share" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="moneypipe buffer2" />
+<meta property="og:description" content="collect money and let members withdraw their share" />
+<link href="../libraries/font-awesome.all.min.css" rel="stylesheet">
+<script src="../libraries/bignumber.js"></script>
+<script src="../libraries/ipfsh.min.js"></script>
+<script src="../libraries/merklescript.min.js"></script>
+<script src="../libraries/web3.min.js"></script>
+<script src="../libraries/loader.js"></script>
+<script src="../libraries/chart.js"></script>
+<script src="../libraries/chartjs-plugin-datalabels@2.0.0"></script>
+<script src="../libraries/qrcode.js"></script>
+<script src="../libraries/randomColor.min.js"></script>
+<script src="../libraries/handlebars.min.js"></script>
+<script src="../libraries/moneypipe.js"></script>
+<script src="../constants.js"></script>
+<link href="../style.css" rel="stylesheet">
+<script id="template" type="text/x-handlebars-template">
+  <input class='account' type='text' placeholder='address'>
+  <input class='value' type='number' placeholder='split portion (1, 10, 100, ...)'>
+</script>
+<script>
+let Params = {}
+location.hash.slice(1).split("&").forEach((token) => {
+  let [key, val] = token.split("=")
+  Params[key] = val
+})
+var web3 = new Web3(window.ethereum);
+var template = Handlebars.compile(document.querySelector("#template").innerHTML)
+var buffer = new Moneypipe.buffer2({
+  web3: web3,
+  network: Constants.net
+})
+var chart;
+var members = []
+const draw = (val) => {
+  let data = new google.visualization.DataTable();
+  data.addColumn('string', 'From');
+  data.addColumn('string', 'To');
+  data.addColumn('number', 'Weight');
+  let rows
+  if (val) {
+    rows = members.map((member) => {
+      return [
+        "Input",
+        `${member.account} (${Math.floor(val * member.value/member.total*100)/100} ETH)`,
+        member.value,
+      ]
+    })
+  } else {
+    rows = members.map((member) => {
+      return [
+        "Input",
+        `${member.account} (${Math.floor(member.value/member.total*10000)/100}%)`,
+        member.value,
+      ]
+    })
+  }
+  data.addRows(rows)
+
+  let chart = new google.visualization.Sankey(document.getElementById('chart'))
+  chart.draw(data, {
+    width: "100%",
+    height: 20 * rows.length,
+    sankey: {
+      node: {
+        label: {
+          color: "#ffffff",
+          fontSize: 12
+        },
+      },
+      link: {
+        colorMode: 'gradient',
+        color: { fill: '#ffffff' },
+      }
+    }
+  })
+  google.visualization.events.addListener(chart, 'select', () => {
+    var selectedItem = chart.getSelection()[0];
+    if (selectedItem) {
+      var value = data.getValue(selectedItem.row, selectedItem.column);
+      alert('The user selected ' + value);
+    }
+  })
+}
+const get_tokens = async () => {
+  let els = document.querySelectorAll(".custom-erc20") 
+  let addresses = []
+  for(let el of els) {
+    addresses.push(el.querySelector(".erc20").value)
+  }
+  return addresses
+}
+let etherscan = "https://etherscan.io/address/"
+const render = async (erc20s) => {
+  console.log("render")
+  try {
+    let account = await buffer.current_account()
+    let b = await buffer.get(Params.address)
+    document.querySelector("#title").textContent = b.title;
+    document.querySelector("#addr").innerHTML = `Group address: <a target="_blank" href="${etherscan}${Params.address}#internaltx">${Params.address}</a><br><br>Send ETH to this group to auto-distribute funds to the members:`
+    document.querySelector("#address").textContent = "ethereum:" + Params.address
+    document.querySelector("#address").href = "ethereum:" + Params.address
+    QRCode.toCanvas(document.querySelector("#qr"), "ethereum:" + Params.address, function (error) {
+      if (error) console.error(error)
+    })
+    members = await buffer.members(Params.address)
+    google.charts.load('current', {'packages':['sankey']});
+    google.charts.setOnLoadCallback(draw);
+    let status = await buffer.status(Params.address, account, erc20s)
+    console.log("status", status)
+    if (status) {
+      document.querySelector("main").classList.remove("hidden")
+      if (status.member) {
+        document.querySelector("main .account").innerHTML = `You are a member: <small>${account}</small>`
+        document.querySelector("main #withdraw").classList.remove("hidden")
+      } else {
+        document.querySelector("main .account").innerHTML = `You are not a member: <small>${account}</small>`
+      }
+      document.querySelector("main .total").innerHTML = status.totalReceivedEth.toString()
+      document.querySelector("main .balance").innerHTML = status.balanceEth.toString()
+      document.querySelector("main .withdrawn").innerHTML = status.withdrawnEth.toString()
+
+      try {
+        document.querySelector("main .weth_total").innerHTML = status.total_weth_received_in_eth.toString()
+//        document.querySelector("main .total_weth_balance").innerHTML = status.total_weth_balance_in_eth.toString()
+        document.querySelector("main .weth_balance").innerHTML = status.user_weth_balance_in_eth.toString()
+        document.querySelector("main .weth_withdrawn").innerHTML = status.user_weth_withdrawn_in_eth.toString()
+      } catch (e) {
+      }
+
+      if (status.custom_erc20.length > 0) {
+        for(let erc20 of status.custom_erc20) {
+          console.log("erc20", erc20)
+          try {
+            document.querySelector(`tr[data-erc20='${erc20.address}'] .erc20_total`).innerHTML = erc20.total_erc20_received_in_eth.toString()
+            document.querySelector(`tr[data-erc20='${erc20.address}'] .erc20_balance`).innerHTML = erc20.user_erc20_balance_in_eth.toString()
+            document.querySelector(`tr[data-erc20='${erc20.address}'] .erc20_withdrawn`).innerHTML = erc20.user_erc20_withdrawn_in_eth.toString()
+          } catch (e) {
+            console.log("ERROR", e)
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.log(e)
+    alert(e.message)
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await render([])
+  document.querySelector(".reveal").addEventListener("click", (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    document.querySelector(".alternative").classList.remove("hidden")
+  })
+  document.querySelector("#withdraw").addEventListener("click", async (e) => {
+    e.target.classList.add("hidden")
+    document.querySelector(".withdrawing").classList.remove("hidden")
+    const addresses = await get_tokens()
+    console.log("addresses", addresses)
+    let account = await buffer.current_account()
+    let status = await buffer.status(Params.address, account)
+    let balance = status.user_weth_balance_in_eth.toString()
+    let addrs = (balance === "0" ? addresses : addresses.concat(Constants.weth))
+    console.log("addrs", addrs)
+    let { tx } = await buffer.withdraw(Params.address, addrs)
+    console.log("tx", tx)
+    location.reload()
+  })
+  document.querySelector("form").addEventListener("submit", async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    document.querySelector(".loading").classList.remove("hidden")
+    document.querySelector(".send").classList.add("hidden")
+    document.querySelector(".receivers").classList.remove("hidden")
+    document.querySelector(".receivers").innerHTML = members.map((member, i) => {
+      return `<a target="_blank" href="${etherscan}${member.account}">member ${i+1}: ${member.account}</a>`
+    }).join("")
+    let val = BigInt(Math.pow(10, 18) * parseFloat(e.target.querySelector(".value").value)).toString()
+    let account = await buffer.current_account()
+    let tx = await web3.eth.sendTransaction({
+      from: account,
+      to: Params.address,
+      value: val
+    })
+    document.querySelector(".loading").classList.add("hidden")
+  })
+  document.querySelector(".value").addEventListener("input", (e) => {
+    draw(parseFloat(e.target.value))
+  })
+  /*
+  document.querySelector(".erc20").addEventListener("input", async (e) => {
+    await render([e.target.value])
+  })
+  */
+  document.querySelector("#add_erc20").addEventListener("click", async (e) => {
+    let address = document.querySelector(".add-erc20-form .erc20").value
+    document.querySelector(".add-erc20-form .erc20").value = ""
+    const tr = document.createElement("tr")
+    tr.className = "custom-erc20"
+    tr.setAttribute("data-erc20", address)
+    tr.innerHTML = `<td><input disabled class='erc20' type='text' placeholder='Custom ERC20 address' value='${address}' /></td>
+      <td class='erc20_total'></td>
+      <td class='erc20_withdrawn'></td>
+      <td class='erc20_balance'></td>`
+      console.log("tr", tr)
+      console.log(document.querySelector("table"))
+    const tbody = document.querySelector("#erc20-balance")
+    tbody.appendChild(tr)
+    const addresses = await get_tokens()
+    await render(addresses)
+
+  })
+})
+</script>
+    <style>
+      #branding {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin: 0.5em;
+        text-align: center;
+      }
+	  .highlight {
+		background-color: #696969;
+	  }
+	  a {
+			color: gold;
+		}
+    </style>
+
+</head>
+<body>
+<header>
+      <a href="../../">Scatter Webtools</a>
+      <div id="Branding">MoneyPipe Withdrawl Webtool</div>
+	  <p>As the old MoneyPipe domain has expired and the original developer gone MIA, Scatter is hosting this static version so that you can withdraw your funds easily. We now recommend <a href="https://docs.scatter.art/docs/creators/splits">Splits</a> for managing withdraw splits with your team, and recommend you migrate to this for any splits tied to royalties.</p>
+	  <p><b>Warning! As the old moneypipe.xyz domain has expired, it should no longer be trusted. Do not attempt to use it in the future.</b></p>
+	  <p>Connect with your wallet to this page and then you should see any moneypipes you have deployed. If you do not see any moneypipes, try going to its address directly.</p>
+	  <p>You can convert old links from <span class="highlight">https://buffer2.moneypipe.xyz/ethereum/group#address=0x000...000</span> to <span class="highlight"><span id="current_site"></span>group#address=0x000...000</span></p>
+	  
+<script>
+  // Get the current site and path
+  const currentSite = window.location.origin + window.location.pathname;
+
+  // Get the span element
+  const currentSiteSpan = document.getElementById("current_site");
+
+  // Add the current site and path to the span
+  currentSiteSpan.textContent = currentSite;
+</script>		  
+
+  <h1 id='title'></h1>
+  <div id='addr'></div>
+  <div id='chart'></div>
+  <form class='field2'>
+    <input class='value' type='text' placeholder="enter in eth (0.1, 0.02, etc.)">
+    <input type='submit' value='send to group' class='btn send'>
+  </form>
+  <div class='options'>
+    or <span class='reveal'>use QR code or address</span>
+  </div>
+  <div class='alternative hidden'>
+    <a id='address'></a>
+    <canvas id='qr'></canvas>
+  </div>
+  <div class='dark loading hidden'>
+    <i class="fa-solid fa-angle-up fa-flip"></i> sending ETH to the group...
+  </div>
+  <div class='receivers hidden'>
+  </div>
+</header>
+<main class='hidden'>
+  <h2 class='account'></h2>
+  <table id='balance'>
+    <tr>
+      <th></th>
+      <th>total</th>
+      <th>you have withdrawn</th>
+      <th>you can withdraw</th>
+    </tr>
+    <tr>
+      <td>ETH</td>
+      <td class='total'></td>
+      <td class='withdrawn'></td>
+      <td class='balance'></td>
+    </tr>
+    <tr>
+      <td>WETH</td>
+      <td class='weth_total'></td>
+      <td class='weth_withdrawn'></td>
+      <td class='weth_balance'></td>
+    </tr>
+  </table>
+  <table id='erc20-balance'>
+  </table>
+  <div class='add-erc20-form'>
+    <input class='erc20' type='text' placeholder='Custom ERC20 address' />
+    <button class='btn dark' id='add_erc20'>+ Add</button></td>
+  </div>
+  <button id='withdraw' class='btn hidden'><i class="fa-solid fa-hand-holding-dollar"></i> withdraw</button>
+  <div class='withdrawing hidden'>
+    <i class="fa-solid fa-angle-up fa-flip"></i> withdrawing funds...
+  </div>
+</main>
+</body>
+</html>

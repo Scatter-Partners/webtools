@@ -1,0 +1,159 @@
+<html>
+  <head>
+    <title>Moneypipe Withdrawl Webtool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="moneypipe buffer2" />
+    <meta
+      name="twitter:description"
+      content="collect money and let members withdraw their share"
+    />
+    <meta
+      name="twitter:image"
+      content="https://buffer2.moneypipe.xyz/buffer_poster.png"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="moneypipe buffer2" />
+    <meta
+      property="og:description"
+      content="create a group to collect money and let members withdraw their share"
+    />
+    <script src="libraries/web3.min.js"></script>
+    <script src="libraries/moneypipe.js"></script>
+    <script src="constants.js"></script>
+    <link href="libraries/font-awesome.all.min.css" rel="stylesheet" />
+    <link href="style.css" rel="stylesheet" />
+
+    <script>
+      let web3;
+
+      if (
+        typeof window !== "undefined" &&
+        typeof window.ethereum !== "undefined"
+      ) {
+        web3 = new Web3(window.ethereum);
+        // Request account access if needed
+        window.ethereum.enable();
+      } else {
+        // We are on the server *OR* the user is not running metamask
+        const provider = new Web3.providers.WebsocketProvider(
+          "wss://mainnet.infura.io/ws/v3/a0c47124ee964d399ee1cedb26eb5c2c"
+        );
+        web3 = new Web3(provider);
+      }
+      var account;
+      var buffer = new Moneypipe.buffer2({
+        web3: web3,
+        network: Constants.net,
+      });
+      console.log(web3);
+      console.log(buffer); // Add this line
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          console.log("starting");
+          let account = await buffer.current_account();
+          let groups2 = await buffer.find({ creator: account });
+          console.log(account);
+          console.log(groups2);
+          let g = [];
+          let limit = 5;
+          for (let i = 0; i < groups2.length; i++) {
+            let addr = groups2[i];
+            console.log("addr", addr);
+            try {
+              let cid = await buffer.cid(addr);
+              g.push(addr);
+              let a = document.createElement("a");
+              a.setAttribute("href", "group#address=" + addr);
+              a.innerHTML = `${addr} <b id="_${addr}"></b>`;
+              document.querySelector(".items").appendChild(a);
+            } catch (e) {
+              console.log("ERROR", e);
+              limit = i;
+              break;
+            }
+          }
+          document.querySelector(".loading").classList.add("hidden");
+
+          for (let i = 0; i <= limit; i++) {
+            let addr = groups2[i];
+            try {
+              let merklescript = await buffer.merklescript(addr);
+              document.querySelector("#_" + addr).innerHTML =
+                merklescript.title;
+            } catch (e) {
+              break;
+            }
+          }
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    </script>
+    <style>
+      #branding {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin: 0.5em;
+        text-align: center;
+      }
+      .highlight {
+        background-color: yellow;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="../">Scatter Webtools</a>
+      <div id="Branding">MoneyPipe Withdrawl Webtool</div>
+      <p>
+        As the old MoneyPipe domain has expired and the original developer gone
+        MIA, Scatter is hosting this static version so that you can withdraw
+        your funds easily. We now recommend
+        <a href="https://docs.scatter.art/docs/creators/splits">Splits</a> for
+        managing withdraw splits with your team, and recommend you migrate to
+        this for any splits tied to royalties.
+      </p>
+      <p>
+        <b
+          >Warning! As the old moneypipe.xyz domain has expired, it should no
+          longer be trusted. Do not attempt to use it in the future.</b
+        >
+      </p>
+      <p>
+        Connect with your wallet to this page and then you should see any
+        moneypipes you have deployed. If you do not see any moneypipes, try
+        going to its address directly.
+      </p>
+      <p>
+        You can convert old links from
+        <span class="highlight"
+          >https://buffer2.moneypipe.xyz/ethereum/group#address=0x000...000</span
+        >
+        to
+        <span class="highlight"
+          ><span id="current_site"></span>group#address=0x000...000</span
+        >
+      </p>
+
+      <script>
+        // Get the current site and path
+        const currentSite = window.location.origin + window.location.pathname;
+
+        // Get the span element
+        const currentSiteSpan = document.getElementById("current_site");
+
+        // Add the current site and path to the span
+        currentSiteSpan.textContent = currentSite;
+      </script>
+    </nav>
+    <div class="container">
+      <div class="loading light">
+        <i class="fa-solid fa-angle-up fa-flip"></i> loading...
+      </div>
+      <div class="items"></div>
+    </div>
+  </body>
+</html>
