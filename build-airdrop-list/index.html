@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Airdrop List Builder - For Collection Migrations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    #text-container, #counter-container, #checkbox-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #input-label, #counter-label, #checkbox-label {
+      font-weight: bold;
+    }
+    #collection-address-input, #starts-at-zero {
+      margin-top: 10px;
+      padding: 5px;
+      width: 350px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+    }
+    #snapshot-button {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      background-color: #007bff;
+      cursor: pointer;
+    }
+    #snapshot-button[disabled] {
+      background-color: #ccc;
+    }
+    #log-box {
+      margin-top: 20px;
+      padding: 5px;
+      width: 350px;
+      height: 200px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+  <style>
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: white;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #ff3d00;
+    }
+  </style>    
+</head>
+<body>
+  <a id="sticky-link" href="../">Scatter Partners Webtools</a>
+  <br>
+  <div id="title">Airdrop List Builder</div>
+  <center>
+    <span>You need a wallet like Metamask to use this!<br>This was made for the purpose of collection migrations.<br>Owner type can either be Wallet or Contract.<br>Anything other than 0x means it's a contract owning the token(s).<br>Delete the third column before using on Scatter.<br>Requires ERC-721s with ownerOf and totalSupply read methods.<br>As Scatter starts at 1 and not 0, if you are migrating from a 0 based contract all IDs will be +1d.<br>Else you need put the first ID last and airdrop the owner of the first ID last.<br>Use at your own risk. Sanity check results.<br>If nothing outputs, check the console for an error.</span>
+  </center>
+  <br>
+  <div id="text-container">
+    <label id="input-label" for="collection-address-input">Collection Address:</label>
+    <input id="collection-address-input" type="text" placeholder="Enter Collection Address">
+  </div>
+  <div id="checkbox-container">
+    <input type="checkbox" id="starts-at-zero" name="starts-at-zero">
+    <label for="starts-at-zero">IDs start at 0</label>
+  </div>
+  <button id="snapshot-button">Build Airdrop List</button>
+  <br>
+  <div id="counter-container">
+    <label id="counter-label">Tokens Processed:</label>
+    <div id="counter-display">0</div>
+  </div>
+  <textarea id="log-box" readonly></textarea>
+
+  <script>
+    let airDropList = [];
+  
+    document.addEventListener('DOMContentLoaded', function() {
+      const collectionAddressInput = document.getElementById('collection-address-input');
+      const snapshotButton = document.getElementById('snapshot-button');
+      const logBox = document.getElementById('log-box');
+      const counterDisplay = document.getElementById('counter-display');
+      const startsAtZeroCheckbox = document.getElementById('starts-at-zero');
+
+      snapshotButton.addEventListener('click', async () => {
+        airDropList = []; // Reset airDropList for each run
+        const collectionAddress = collectionAddressInput.value.trim();
+        const startsAtZero = startsAtZeroCheckbox.checked;
+        if (!collectionAddress) {
+          alert('Please enter a collection address.');
+          return;
+        }
+
+        snapshotButton.disabled = true;
+        snapshotButton.innerText = 'Building Airdrop List...';
+        logBox.value = 'Starting... this can take a while. \nTotal supply: ';
+        let counter = 0;
+
+        try {
+          await buildAirdropList(collectionAddress, startsAtZero, (newCounter) => {
+            counterDisplay.textContent = `Tokens Processed: ${newCounter}`;
+            counter = newCounter;
+          });
+          mergeConsecutiveEntries();
+          downloadCSV(airDropList);
+        } catch (error) {
+          console.log(error);
+          logBox.value += 'Error: ' + error.message + '\n';
+        }
+
+        snapshotButton.disabled = false;
+        snapshotButton.innerText = 'Build Airdrop List';
+      });
+
+      async function buildAirdropList(collectionAddress, startsAtZero, updateCounter) {
+        if (!window.ethereum) {
+          logBox.value += 'Ethereum provider (e.g., MetaMask) not found.\n';
+          return;
+        }
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const contract = new ethers.Contract(collectionAddress, [
+          'function ownerOf(uint256 tokenId) external view returns (address)',
+          'function totalSupply() external view returns (uint256)'
+        ], provider);
+
+        const totalSupply = await contract.totalSupply();
+        logBox.value += totalSupply + "\n";
+
+        const batchSize = 100;
+        const startTokenId = startsAtZero ? 0 : 1;
+        const endTokenId = startsAtZero ? totalSupply - 1 : totalSupply;
+        for (let batchStart = startTokenId; batchStart <= endTokenId; batchStart += batchSize) {
+          const batchEnd = Math.min(batchStart + batchSize - 1, endTokenId);
+          const promises = [];
+          for (let tokenId = batchStart; tokenId <= batchEnd; tokenId++) {
+            promises.push((async () => {
+              try {
+                const ownerAddress = await contract.ownerOf(tokenId);
+                const code = await provider.getCode(ownerAddress);
+                const ownerType = code === '0x' ? 'Wallet' : 'Contract';
+                
+                return { tokenId, ownerAddress, ownerType: ownerType, success: true };
+              } catch (error) {
+                return { tokenId, error, success: false };
+              }
+            })());
+          }
+
+          const results = await Promise.allSettled(promises);
+          results.forEach(result => {
+            if (result.status === 'fulfilled' && result.value.success) {
+              airDropList.push([result.value.ownerAddress, 1, result.value.ownerType]);
+              updateCounter(result.value.tokenId);
+            }
+          });
+        }
+      }
+
+      function mergeConsecutiveEntries() {
+        airDropList = airDropList.reduce((acc, current) => {
+          if (acc.length > 0 && acc[acc.length - 1][0] === current[0]) {
+            acc[acc.length - 1][1] += current[1];
+          } else {
+            acc.push(current);
+          }
+          return acc;
+        }, []);
+      }
+
+      function downloadCSV(airDropList) {
+        const csvContent = 'data:text/csv;charset=utf-8,Owner Address,Quantity,Owner Type\n' + airDropList.map(e => e.join(',')).join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', 'airdrop_list.csv');
+        document.body.appendChild(link);
+        link.click();
+      }
+    });
+  </script>
+</body>
+</html>
