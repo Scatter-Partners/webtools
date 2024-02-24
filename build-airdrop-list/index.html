@@ -56,22 +56,22 @@
       white-space: pre-wrap;
     }
   </style>
-	<style>
-		#sticky-link {
-			position: fixed;
-			top: 10px;
-			left: 10px;
-			background-color: white;
-			padding: 5px;
-			border-radius: 5px;
-			text-decoration: underline;
-			color: #ff3d00;
-		}
-	</style>	  
+  <style>
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: white;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #ff3d00;
+    }
+  </style>    
 </head>
 <body>
-	<a id="sticky-link" href="../">Scatter Partners Webtools</a>
-	<br>
+  <a id="sticky-link" href="../">Scatter Partners Webtools</a>
+  <br>
   <div id="title">Airdrop List Builder</div>
   <center>
     <span>You need a wallet like Metamask to use this!<br>This was made for the purpose of collection migrations.<br>Owner type can either be Wallet or Contract.<br>Anything other than 0x means it's a contract owning the token(s).<br>Delete the third column before using on Scatter.<br>Requires ERC-721s with ownerOf and totalSupply read methods.<br>As Scatter starts at 1 and not 0, if you are migrating from a 0 based contract all IDs will be +1d.<br>Else you need put the first ID last and airdrop the owner of the first ID last.<br>Use at your own risk. Sanity check results.<br>If nothing outputs, check the console for an error.</span>
@@ -95,7 +95,7 @@
 
   <script>
     let airDropList = [];
-	
+  
     document.addEventListener('DOMContentLoaded', function() {
       const collectionAddressInput = document.getElementById('collection-address-input');
       const snapshotButton = document.getElementById('snapshot-button');
@@ -122,6 +122,7 @@
             counterDisplay.textContent = `Tokens Processed: ${newCounter}`;
             counter = newCounter;
           });
+          mergeConsecutiveEntries();
           downloadCSV(airDropList);
         } catch (error) {
           console.log(error);
@@ -157,9 +158,9 @@
             promises.push((async () => {
               try {
                 const ownerAddress = await contract.ownerOf(tokenId);
-				const code = await provider.getCode(ownerAddress);
-				const ownerType = code === '0x' ? 'Wallet' : 'Contract';
-				
+                const code = await provider.getCode(ownerAddress);
+                const ownerType = code === '0x' ? 'Wallet' : 'Contract';
+                
                 return { tokenId, ownerAddress, ownerType: ownerType, success: true };
               } catch (error) {
                 return { tokenId, error, success: false };
@@ -175,6 +176,17 @@
             }
           });
         }
+      }
+
+      function mergeConsecutiveEntries() {
+        airDropList = airDropList.reduce((acc, current) => {
+          if (acc.length > 0 && acc[acc.length - 1][0] === current[0]) {
+            acc[acc.length - 1][1] += current[1];
+          } else {
+            acc.push(current);
+          }
+          return acc;
+        }, []);
       }
 
       function downloadCSV(airDropList) {
