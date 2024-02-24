@@ -74,7 +74,7 @@
   <br>
   <div id="title">Airdrop List Builder</div>
   <center>
-    <span><br>Owner type can either be Wallet or Contract.<br>Delete the first row and third column before using on Scatter.<br>Requires ERC-721s with ownerOf and totalSupply read methods.<br>As Scatter starts at 1 and not 0, if you are migrating from a 0 based contract all IDs will be +1d.<br>Else you need put the first ID last and airdrop the owner of the first ID last.<br>Use at your own risk. Sanity check results.<br>If nothing outputs, check the console for an error.<br>If there are gaps in your original minting where some IDs were never minted, don't rely on this tool.<br>The way airdrops lists work is if you own ID 1, I own ID 2 and 3, and you own ID 4 the list needs to be like:<br>
+    <span><br>Requires a wallet like Metamask to be installed.<br>Owner type can either be Wallet or Contract.<br>Delete the first row and third column before using on Scatter.<br>Requires ERC-721s with ownerOf and totalSupply read methods.<br>As Scatter starts at 1 and not 0, if you are migrating from a 0 based contract all IDs will be +1d.<br>Else you need put the first ID last and airdrop the owner of the first ID last.<br>Use at your own risk. Sanity check results.<br>If nothing outputs, check the console for an error.<br>If there are gaps in your original minting where some IDs were never minted, don't rely on this tool.<br>The way airdrops lists work is if you own ID 1, I own ID 2 and 3, and you own ID 4 the list needs to be like:<br>
 you, 1<br>
 me, 2<br>
 you, 1<br>
@@ -122,8 +122,7 @@ Then in batchMintTo tab when this list is used we get the same IDs in the new co
         let counter = 0;
 
         try {
-		  //const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const provider = ethers.getDefaultProvider();
+		  const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = await provider.getBlockNumber();
           await buildAirdropList(collectionAddress, startsAtZero, (newCounter) => {
             counterDisplay.textContent = `Tokens Processed: ${newCounter}`;
