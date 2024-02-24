@@ -122,7 +122,8 @@ Then in batchMintTo tab when this list is used we get the same IDs in the new co
         let counter = 0;
 
         try {
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
+		  //const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const provider = ethers.getDefaultProvider();
           const blockNumber = await provider.getBlockNumber();
           await buildAirdropList(collectionAddress, startsAtZero, (newCounter) => {
             counterDisplay.textContent = `Tokens Processed: ${newCounter}`;
