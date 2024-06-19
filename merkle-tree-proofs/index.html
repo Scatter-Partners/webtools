@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merkle Root Generator and Proof Verifier</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/merkletreejs@latest/merkletree.js"></script>
+  </head>
+  <body>
+    <h1 id="merkle-proof-verifier">Merkle Proof Verifier</h1>
+    <p>
+      <a href="https://scatter-partners.github.io/merkle-proof/">https://scatter-partners.github.io/merkle-proof/</a>
+    </p>
+    <p>This tool is primarily for verifying Merkle roots used by collection contracts published through <a href="https://www.scatter.art/">https://www.scatter.art/</a>
+    </p>
+    <p>Use this tool to verify that Merkle roots are proper. Use the same list that was used to generate and you should get the same root.</p>
+    <p>You can also use this tool to verify that an address is contained within a Merkle root. For example, you can look up Merkle roots for lists on a collection&#39;s Etherscan page and check to make sure your address is in that list.</p>
+    <p>
+      <img src="https://user-images.githubusercontent.com/94951726/231622294-a43ccf23-e4c8-4514-818d-d375e38133d5.png" alt="scatter_root_example">
+    </p>
+    <h1>Merkle Root Generator</h1>
+    <p>Enter Ethereum wallet addresses (one per line):</p>
+    <textarea id="addresses" rows="10" cols="50"></textarea>
+    <br>
+    <button onclick="generateMerkleRoot()">Generate Merkle Root</button>
+    <h2>Merkle Root:</h2>
+    <p id="result"></p>
+    <h2>Verify Merkle Root</h2>
+    <p>Enter Merkle Root:</p>
+    <input type="text" id="inputMerkleRoot" size="70">
+    <p>Enter Address:</p>
+    <input type="text" id="inputAddress" size="50">
+    <br>
+    <button onclick="verifyMerkleRoot()">Verify Merkle Root</button>
+    <p id="verificationResult"></p>
+    <h2>Generate Proof</h2>
+    <p>Enter Address for Proof:</p>
+    <input type="text" id="proofAddress" size="50">
+    <br>
+    <button onclick="generateProof()">Generate Proof</button>
+    <p id="proofResult"></p>
+    <script>
+      const provider = new ethers.providers.getDefaultProvider();
+
+      function isAddress(address) {
+        return ethers.utils.isAddress(address);
+      }
+      async function resolveEns(address) {
+        const resolvedAddress = await provider.resolveName(address);
+        if (!resolvedAddress) {
+          throw new Error(`Cannot resolve ENS address: ${address}`);
+        }
+        return resolvedAddress;
+      }
+
+      function hash(address) {
+        const hashBytes = ethers.utils.arrayify(ethers.utils.solidityKeccak256(['address'], [address]));
+        return new Uint8Array(hashBytes);
+      }
+
+      function merkleRoot(elements) {
+        const hashedElements = elements.map(e => hash(e));
+        const tree = new MerkleTree(hashedElements, ethers.utils.keccak256, {
+          sortPairs: true
+        });
+        return tree.getHexRoot();
+      }
+
+      function generateProofForAddress(address, elements) {
+        const hashedElements = elements.map(e => hash(e));
+        const tree = new MerkleTree(hashedElements, ethers.utils.keccak256, {
+          sortPairs: true
+        });
+        return tree.getHexProof(hash(address));
+      }
+
+      function verify(root, address, elements) {
+        const hashedElements = elements.map(e => hash(e));
+        const tree = new MerkleTree(hashedElements, ethers.utils.keccak256, {
+          sortPairs: true
+        });
+        const proof = tree.getHexProof(hash(address));
+        return tree.verify(proof, hash(address), root);
+      }
+      async function generateMerkleRoot() {
+        const input = document.getElementById("addresses").value;
+        const lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+        const root = merkleRoot(lines);
+        document.getElementById("result").innerText = root;
+      }
+      async function verifyMerkleRoot() {
+        const merkleRoot = document.getElementById("inputMerkleRoot").value.trim();
+        const inputAddress = document.getElementById("inputAddress").value.trim();
+        let address;
+        if (isAddress(inputAddress)) {
+          address = inputAddress;
+        } else if (inputAddress.endsWith(".eth")) {
+          try {
+            address = await resolveEns(inputAddress);
+          } catch (error) {
+            alert(error);
+            return;
+          }
+        } else {
+          alert(`Invalid address: ${inputAddress}`);
+          return;
+        }
+        const input = document.getElementById("addresses").value;
+        const lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+        const isVerified = verify(merkleRoot, address, lines);
+        if (isVerified) {
+          document.getElementById("verificationResult").innerText = "Address is in the Merkle tree.";
+        } else {
+          document.getElementById("verificationResult").innerText = "Address is not in the Merkle tree.";
+        }
+      }
+      async function generateProof() {
+        const inputAddress = document.getElementById("proofAddress").value.trim();
+        let address;
+        if (isAddress(inputAddress)) {
+          address = inputAddress;
+        } else if (inputAddress.endsWith(".eth")) {
+          try {
+            address = await resolveEns(inputAddress);
+          } catch (error) {
+            alert(error);
+            return;
+          }
+        } else {
+          alert(`Invalid address: ${inputAddress}`);
+          return;
+        }
+        const input = document.getElementById("addresses").value;
+        const lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+        const proof = generateProofForAddress(address, lines);
+        document.getElementById("proofResult").innerText = `Proof for ${address}: ${proof.join(", ")}`;
+      }
+    </script>
+  </body>
+</html>
