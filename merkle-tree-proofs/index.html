@@ -39,7 +39,8 @@
     <input type="text" id="proofAddress" size="50">
     <br>
     <button onclick="generateProof()">Generate Proof</button>
-    <p id="proofResult"></p>
+    <button onclick="copyProof()">Copy Proof to Clipboard</button>
+    <p id="proofResult" style="max-width: 600px; overflow: scroll;"></p>
     <script>
       const provider = new ethers.providers.getDefaultProvider();
 
@@ -134,7 +135,15 @@
         const input = document.getElementById("addresses").value;
         const lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
         const proof = generateProofForAddress(address, lines);
-        document.getElementById("proofResult").innerText = `Proof for ${address}: ${proof.join(",")}`;
+        document.getElementById("proofResult").innerText = proof.join(",");
+      }
+      function copyProof() {
+        const proofText = document.getElementById("proofResult").innerText;
+        navigator.clipboard.writeText(proofText).then(() => {
+          alert("Proof copied to clipboard!");
+        }).catch(err => {
+          alert("Failed to copy proof: ", err);
+        });
       }
     </script>
   </body>
