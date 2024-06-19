@@ -134,7 +134,7 @@
         const input = document.getElementById("addresses").value;
         const lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
         const proof = generateProofForAddress(address, lines);
-        document.getElementById("proofResult").innerText = `Proof for ${address}: ${proof.join(", ")}`;
+        document.getElementById("proofResult").innerText = `Proof for ${address}: ${proof.join(",")}`;
       }
     </script>
   </body>
