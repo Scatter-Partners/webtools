@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JSON Validator with Line Numbers</title>
+    <!-- Include CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.8/codemirror.min.css">
+    <!-- Include Bootstrap CSS for styling -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        #sticky-link {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+            text-decoration: underline;
+            color: #ff3d00;
+        }	
+        #log {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+        }
+        .valid {
+            color: green;
+        }
+        /* Style CodeMirror editor to match Bootstrap */
+        .CodeMirror {
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="container mt-3">
+	<a id="sticky-link" href="../">Scatter Partners Webtools</a>
+	<br>
+    <h1>JSON Validator</h1>
+    <div class="form-group">
+        <label for="json-input">Enter JSON text below:</label>
+        <textarea id="json-input" placeholder="Paste your JSON here..."></textarea>
+    </div>
+    <div id="log" class="mt-3"></div>
+
+    <!-- Include CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.8/codemirror.min.js"></script>
+    <!-- Include CodeMirror JSON mode -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.8/mode/javascript/javascript.min.js"></script>
+    <!-- Include jsonlint JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
+    <script>
+        const log = document.getElementById('log');
+        const textarea = document.getElementById('json-input');
+
+        // Initialize CodeMirror editor
+        const editor = CodeMirror.fromTextArea(textarea, {
+            lineNumbers: true,
+            mode: {name: "javascript", json: true},
+            theme: "default", // You can change the theme here
+            viewportMargin: Infinity // Ensures the editor resizes properly
+        });
+
+        function validateJSON() {
+            log.innerHTML = ''; // Clear previous log
+
+            const jsonText = editor.getValue();
+
+            // Check if the input is empty or contains only whitespace
+            if (jsonText.trim() === '') {
+                log.innerHTML = '<div class="valid"><strong>Please paste JSON in the edit box above to validate it!</strong></div>';
+                return;
+            }
+
+            try {
+                // Use jsonlint to parse and validate JSON
+                jsonlint.parse(jsonText);
+                log.innerHTML = '<div class="valid"><strong>JSON is valid!</strong></div>';
+            } catch (error) {
+                log.innerHTML = '<div class="error"><strong>JSON is invalid:</strong></div>';
+
+                // Extract line and column numbers from the error message
+                const errorMessage = error.message;
+                const lineMatch = errorMessage.match(/line (\d+)/i);
+                const columnMatch = errorMessage.match(/column (\d+)/i);
+                const lineNumber = lineMatch ? parseInt(lineMatch[1], 10) : null;
+                const columnNumber = columnMatch ? parseInt(columnMatch[1], 10) : null;
+
+                // Display the error with line and column numbers
+                if (lineNumber !== null && columnNumber !== null) {
+                    log.innerHTML += `<div class="error">Error on line ${lineNumber}, column ${columnNumber}: ${error.reason}</div>`;
+
+                    // Provide hints based on common JSON errors
+                    if (error.reason.includes("Unexpected token")) {
+                        const tokenMatch = error.reason.match(/Unexpected token (.*) in JSON/);
+                        const token = tokenMatch ? tokenMatch[1] : '';
+                        if (token === ',') {
+                            log.innerHTML += `<div class="error">Hint: There might be an extra comma.</div>`;
+                        } else if (token === '}') {
+                            log.innerHTML += `<div class="error">Hint: Check for missing commas or brackets.</div>`;
+                        }
+                    } else if (error.reason.includes("Expected")) {
+                        log.innerHTML += `<div class="error">Hint: Check for missing or extra commas.</div>`;
+                    }
+                } else {
+                    // If line number is not available, display the full error message
+                    log.innerHTML += `<div class="error">${errorMessage}</div>`;
+                }
+            }
+        }
+
+        // Validate JSON on editor content change
+        editor.on('change', () => {
+            validateJSON();
+        });
+
+        // Initial validation (if there's any content)
+        validateJSON();
+    </script>
+</body>
+</html>
