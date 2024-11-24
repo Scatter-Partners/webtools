@@ -23,7 +23,7 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        #input_zone input, #input_zone label {
+        #input_zone input, #input_zone label, #input_zone textarea {
             margin: 5px;
         }
         #sticky-link {
@@ -38,6 +38,14 @@
         }
         #progress {
             color: blue;
+        }
+        #json-preview {
+            width: 100%;
+            max-width: 600px;
+            height: 200px;
+            font-family: monospace;
+            padding: 10px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -63,6 +71,8 @@
         <input type="text" id="description"><br>
         <label for="external-url">External URL (optional):</label>
         <input type="text" id="external-url"><br>
+        <label for="json-preview">Preview of First JSON:</label><br>
+        <textarea id="json-preview" readonly rows="15" cols="70"></textarea><br>
         <button id="generate-button" onclick="generateUnrevealedJSONs()">Generate and Download JSONs (.zip)</button>
         <p id="progress"></p>
     </div>
@@ -105,10 +115,15 @@
                 return;
             }
 
+            let imageUrl = protocol + cid;
+            if (imageFilename) {
+                imageUrl += '/' + imageFilename;
+            }
+
             const data = {
                 name: `${namePrefix}${includeId ? ' #' + i : ''}`,
                 description: description,
-                image: `${protocol}${cid}/${imageFilename}`,
+                image: imageUrl,
             };
             if (externalUrl) {
                 data.external_url = externalUrl;
@@ -123,6 +138,53 @@
         }
 
         generate(startId);
+    }
+
+    function updatePreview() {
+        const protocol = document.getElementById('protocol').value;
+        const cid = document.getElementById('cid').value;
+        const imageFilename = document.getElementById('image-filename').value;
+        const startIdInput = document.getElementById('start-id').value;
+        const namePrefix = document.getElementById('name-prefix').value;
+        const includeId = document.getElementById('include-id').checked;
+        const description = document.getElementById('description').value;
+        const externalUrl = document.getElementById('external-url').value;
+
+        const startId = parseInt(startIdInput);
+        const id = isNaN(startId) ? 1 : startId;
+
+        let imageUrl = protocol + cid;
+        if (imageFilename) {
+            imageUrl += '/' + imageFilename;
+        }
+
+        const data = {
+            name: `${namePrefix}${includeId ? ' #' + id : ''}`,
+            description: description,
+            image: imageUrl,
+        };
+        if (externalUrl) {
+            data.external_url = externalUrl;
+        }
+
+        const formattedJson = JSON.stringify(data, null, 2);
+        document.getElementById('json-preview').value = formattedJson;
+    }
+
+    function attachInputListeners() {
+        const inputs = document.querySelectorAll('#input_zone input');
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                input.addEventListener('change', updatePreview);
+            } else {
+                input.addEventListener('input', updatePreview);
+            }
+        });
+    }
+
+    window.onload = function() {
+        attachInputListeners();
+        updatePreview();
     }
     </script>
 </body>
