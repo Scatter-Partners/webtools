@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ethereum Mint Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Updated ethers.js CDN link -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    #input-container {
+      margin-bottom: 20px;
+	    margin: auto;
+		width: 70%;
+		max-width:960px;
+    }
+    #input-container label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    #input-container input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    #analyze-button {
+      padding: 10px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #analyze-button[disabled] {
+      background-color: #ccc;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: white;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #ff3d00;
+    }	
+  </style>
+</head>
+<body>
+<a id="sticky-link" href="https://webtools.scatter.art">Scatter Partners Webtools</a>
+
+  <h1>Ethereum Mint Analyzer</h1>
+  <div id="input-container">
+    <label for="contract-address">Contract Address:</label>
+    <input type="text" id="contract-address" placeholder="Enter Ethereum Contract Address">
+
+    <label for="deployment-block">Deployment Block Number (optional):</label>
+    <input type="text" id="deployment-block" placeholder="Optional - enter if known">
+
+    <label for="required-amount">Required Amount Per Mint (ETH):</label>
+    <input type="text" id="required-amount" placeholder="Optional">
+
+    <button id="analyze-button">Analyze Mints</button>
+	
+	<p>This is meant for Scatter contracts, but may work with others. Use at your own risk! Verify results manually!</p>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    document.getElementById('analyze-button').addEventListener('click', async () => {
+      const contractAddress = document.getElementById('contract-address').value.trim();
+      const requiredAmountInput = document.getElementById('required-amount').value.trim();
+      const deploymentBlockInput = document.getElementById('deployment-block').value.trim();
+      const requiredAmountWei = requiredAmountInput ? ethers.utils.parseEther(requiredAmountInput) : null;
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerText = 'Initializing...';
+
+      if (!ethers.utils.isAddress(contractAddress)) {
+        alert('Invalid contract address.');
+        document.getElementById('analyze-button').disabled = false;
+        return;
+      }
+
+      document.getElementById('analyze-button').disabled = true;
+
+      try {
+        // Connect to an Ethereum provider (Infura or Alchemy)
+        const provider = new ethers.providers.InfuraProvider('homestead', '5394ccbb645c444cb54a553dd38f942d');
+        // Alternatively, you can use Alchemy:
+        // const provider = new ethers.providers.AlchemyProvider('homestead', '<YOUR_ALCHEMY_API_KEY>');
+
+        // Event signature for Transfer(address,address,uint256)
+        const transferEventSignature = 'Transfer(address,address,uint256)';
+        const transferEventTopic = ethers.utils.id(transferEventSignature);
+
+        // Zero address in 32-byte hex
+        const zeroAddress = '0x0000000000000000000000000000000000000000';
+        const zeroAddressTopic = ethers.utils.hexZeroPad(zeroAddress, 32);
+
+        // Use the user-provided deployment block or default to 0
+        let fromBlock = 0;
+        if (deploymentBlockInput) {
+          fromBlock = parseInt(deploymentBlockInput);
+          if (isNaN(fromBlock) || fromBlock < 0) {
+            alert('Invalid deployment block number.');
+            document.getElementById('analyze-button').disabled = false;
+            return;
+          }
+        }
+
+        statusDiv.innerText = 'Fetching mint events...';
+
+        // Set up the filter for mint events
+        const filter = {
+          address: contractAddress,
+          fromBlock: fromBlock,
+          toBlock: 'latest',
+          topics: [
+            transferEventTopic,
+            zeroAddressTopic, // from zero address
+          ],
+        };
+
+        // Fetch all logs matching the filter
+        const logs = await provider.getLogs(filter);
+
+        statusDiv.innerText = `Processing ${logs.length} mint events...`;
+
+        const addressToTotalMints = {};
+        const txHashToMints = {};
+
+        // Process logs
+        for (let i = 0; i < logs.length; i++) {
+          const log = logs[i];
+          const transactionHash = log.transactionHash;
+          const toAddress = ethers.utils.getAddress('0x' + log.topics[2].substr(26));
+
+          // Initialize count for the address if not present
+          if (!addressToTotalMints[toAddress]) {
+            addressToTotalMints[toAddress] = 0;
+          }
+
+          addressToTotalMints[toAddress] += 1;
+
+          // Collect mints per transaction
+          if (!txHashToMints[transactionHash]) {
+            txHashToMints[transactionHash] = {
+              toAddresses: [],
+              count: 0,
+            };
+          }
+          txHashToMints[transactionHash].toAddresses.push(toAddress);
+          txHashToMints[transactionHash].count += 1;
+
+          statusDiv.innerText = `Processed ${i + 1} of ${logs.length} mint events...`;
+        }
+
+        // Now, for each transaction hash, fetch the transaction details to get the value
+        statusDiv.innerText = 'Analyzing transactions...';
+
+        const txHashes = Object.keys(txHashToMints);
+        const finalAddressToMints = {};
+
+        for (let i = 0; i < txHashes.length; i++) {
+          const txHash = txHashes[i];
+          const txData = txHashToMints[txHash];
+          const transaction = await provider.getTransaction(txHash);
+
+          // Ensure transaction.value is defined
+          const txValue = transaction.value || ethers.BigNumber.from(0);
+          const mintsInTx = txData.count;
+
+          // Calculate value per mint
+          const valuePerMint = txValue.div(mintsInTx);
+
+          let includeMints = true;
+          if (requiredAmountWei) {
+            includeMints = valuePerMint.gte(requiredAmountWei);
+          }
+
+          if (includeMints) {
+            // Increment mints for each address involved in this transaction
+            for (const toAddress of txData.toAddresses) {
+              if (!finalAddressToMints[toAddress]) {
+                finalAddressToMints[toAddress] = 0;
+              }
+              finalAddressToMints[toAddress] += 1;
+            }
+          }
+
+          statusDiv.innerText = `Processed ${i + 1} of ${txHashes.length} transactions...`;
+        }
+
+        // Prepare CSV content
+        let csvContent = 'data:text/csv;charset=utf-8,Address,Total Paid Mints\n';
+        for (const [address, totalMints] of Object.entries(finalAddressToMints)) {
+          csvContent += `${address},${totalMints}\n`;
+        }
+
+        // Download CSV
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `paid_mints_${contractAddress}.csv`);
+        document.body.appendChild(link);
+        link.click();
+
+        statusDiv.innerText = 'Analysis complete. CSV file downloaded.';
+      } catch (error) {
+        console.error(error);
+        statusDiv.innerText = 'An error occurred. Check the console for details.';
+      } finally {
+        document.getElementById('analyze-button').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
