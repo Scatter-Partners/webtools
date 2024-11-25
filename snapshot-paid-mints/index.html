@@ -16,9 +16,9 @@
     }
     #input-container {
       margin-bottom: 20px;
-	    margin: auto;
-		width: 70%;
-		max-width:960px;
+      margin: auto;
+      width: 70%;
+      max-width: 960px;
     }
     #input-container label {
       display: block;
@@ -57,7 +57,7 @@
   </style>
 </head>
 <body>
-<a id="sticky-link" href="https://webtools.scatter.art">Scatter Partners Webtools</a>
+  <a id="sticky-link" href="https://webtools.scatter.art">Scatter Partners Webtools</a>
 
   <h1>Ethereum Mint Analyzer</h1>
   <div id="input-container">
@@ -72,10 +72,13 @@
 
     <button id="analyze-button">Analyze Mints</button>
 	
-	<p>This is meant for Scatter contracts, but may work with others. Use at your own risk! Verify results manually!</p>
+    <p>This is meant for Scatter contracts, but may work with others. Use at your own risk! Verify results manually!</p>
+	
+	<div id="status"></div>
+	
   </div>
 
-  <div id="status"></div>
+  
 
   <script>
     document.getElementById('analyze-button').addEventListener('click', async () => {
@@ -204,7 +207,12 @@
 
         // Prepare CSV content
         let csvContent = 'data:text/csv;charset=utf-8,Address,Total Paid Mints\n';
-        for (const [address, totalMints] of Object.entries(finalAddressToMints)) {
+
+        // Sort the addresses by total mints in descending order
+        const sortedAddresses = Object.entries(finalAddressToMints)
+          .sort((a, b) => b[1] - a[1]); // Sort by total mints descending
+
+        for (const [address, totalMints] of sortedAddresses) {
           csvContent += `${address},${totalMints}\n`;
         }
 
