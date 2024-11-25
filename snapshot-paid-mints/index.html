@@ -64,7 +64,7 @@
     <label for="contract-address">Contract Address:</label>
     <input type="text" id="contract-address" placeholder="Enter Ethereum Contract Address">
 
-    <label for="deployment-block">Deployment Block Number (optional):</label>
+    <label for="deployment-block">Starting Block Number (optional):</label>
     <input type="text" id="deployment-block" placeholder="Optional - enter if known">
 
     <label for="required-amount">Required Amount Per Mint (ETH):</label>
@@ -73,41 +73,22 @@
     <button id="analyze-button">Analyze Mints</button>
   
     <p>This is meant for Scatter contracts, but may work with others. Use at your own risk! Verify results manually!</p>
+	
+	<div id="status"></div>
   </div>
 
-  <div id="status"></div>
+  
 
   <!-- Include the contract ABIs -->
   <script>
     // Main contract ABI - Include all relevant functions
     const mainContractABI = [
-      // ... (Insert the full ABI of your main contract here)
+      // Replace this array with the full ABI of your main contract
       // Ensure that the following functions are included:
       // - mint
       // - mintTo
       // - batchMintTo
-      // For example:
-      {
-        "inputs": [
-          {
-            "components": [
-              { "internalType": "bytes32", "name": "key", "type": "bytes32" },
-              { "internalType": "bytes32[]", "name": "proof", "type": "bytes32[]" }
-            ],
-            "internalType": "struct Auth",
-            "name": "auth",
-            "type": "tuple"
-          },
-          { "internalType": "address[]", "name": "toList", "type": "address[]" },
-          { "internalType": "uint256[]", "name": "quantityList", "type": "uint256[]" },
-          { "internalType": "address", "name": "affiliate", "type": "address" },
-          { "internalType": "bytes", "name": "signature", "type": "bytes" }
-        ],
-        "name": "batchMintTo",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-      },
+      // Example function definitions:
       {
         "inputs": [
           {
@@ -145,6 +126,27 @@
           { "internalType": "bytes", "name": "signature", "type": "bytes" }
         ],
         "name": "mintTo",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              { "internalType": "bytes32", "name": "key", "type": "bytes32" },
+              { "internalType": "bytes32[]", "name": "proof", "type": "bytes32[]" }
+            ],
+            "internalType": "struct Auth",
+            "name": "auth",
+            "type": "tuple"
+          },
+          { "internalType": "address[]", "name": "toList", "type": "address[]" },
+          { "internalType": "uint256[]", "name": "quantityList", "type": "uint256[]" },
+          { "internalType": "address", "name": "affiliate", "type": "address" },
+          { "internalType": "bytes", "name": "signature", "type": "bytes" }
+        ],
+        "name": "batchMintTo",
         "outputs": [],
         "stateMutability": "payable",
         "type": "function"
@@ -268,10 +270,37 @@
         const mainContractInterface = new ethers.utils.Interface(mainContractABI);
         const batchContractInterface = new ethers.utils.Interface(batchContractABI);
 
+        // Implement a delay between requests to avoid rate limits
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        // Implement a function to retry async operations
+        async function retryAsync(fn, retries = 5, delayMs = 1000) {
+          for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+              return await fn();
+            } catch (error) {
+              if (attempt === retries) {
+                throw error;
+              }
+              console.warn(`Attempt ${attempt} failed. Retrying in ${delayMs}ms...`);
+              await delay(delayMs);
+              delayMs *= 2; // Exponential backoff
+            }
+          }
+        }
+
         for (let i = 0; i < txHashes.length; i++) {
           const txHash = txHashes[i];
           const txData = txHashToMints[txHash];
-          const transaction = await provider.getTransaction(txHash);
+
+          // Fetch the transaction with retry logic
+          let transaction;
+          try {
+            transaction = await retryAsync(() => provider.getTransaction(txHash));
+          } catch (error) {
+            console.error(`Failed to fetch transaction ${txHash}: ${error.message}`);
+            continue;
+          }
 
           // Ensure transaction.value is defined
           const txValue = transaction.value || ethers.BigNumber.from(0);
@@ -288,6 +317,17 @@
               data: transaction.data,
               value: transaction.value,
             });
+
+            // Determine paid quantity from the transaction
+            if (decodedInput.name === 'mint' || decodedInput.name === 'mintTo') {
+              paidQuantity = decodedInput.args.quantity.toNumber();
+            } else if (decodedInput.name === 'batchMintTo') {
+              paidQuantity = decodedInput.args.quantityList.reduce((sum, qty) => sum + qty.toNumber(), 0);
+            } else {
+              console.warn(`Unrecognized function ${decodedInput.name} in transaction ${txHash}`);
+              // As a fallback, use total mints in transaction
+              paidQuantity = totalMintsInTx;
+            }
           } catch (err) {
             // If failed, try to decode using the batch contract ABI
             try {
@@ -333,7 +373,8 @@
                 }
               } else {
                 console.warn(`Unrecognized batch function ${decodedInput.name}`);
-                continue;
+                // As a fallback, use total mints in transaction
+                paidQuantity = totalMintsInTx;
               }
             } catch (batchErr) {
               // If still fails, we can't decode the transaction
@@ -381,6 +422,9 @@
           }
 
           statusDiv.innerText = `Processed ${i + 1} of ${txHashes.length} transactions...`;
+
+          // Add a small delay to avoid rate limiting
+          await delay(200); // Delay of 200ms between requests
         }
 
         // Prepare CSV content
