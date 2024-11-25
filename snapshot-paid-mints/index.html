@@ -53,7 +53,7 @@
       border-radius: 5px;
       text-decoration: underline;
       color: #ff3d00;
-    }	
+    }
   </style>
 </head>
 <body>
@@ -71,14 +71,103 @@
     <input type="text" id="required-amount" placeholder="Optional">
 
     <button id="analyze-button">Analyze Mints</button>
-	
+  
     <p>This is meant for Scatter contracts, but may work with others. Use at your own risk! Verify results manually!</p>
-	
-	<div id="status"></div>
-	
   </div>
 
-  
+  <div id="status"></div>
+
+  <!-- Include the contract ABIs -->
+  <script>
+    // Main contract ABI - Include all relevant functions
+    const mainContractABI = [
+      // ... (Insert the full ABI of your main contract here)
+      // Ensure that the following functions are included:
+      // - mint
+      // - mintTo
+      // - batchMintTo
+      // For example:
+      {
+        "inputs": [
+          {
+            "components": [
+              { "internalType": "bytes32", "name": "key", "type": "bytes32" },
+              { "internalType": "bytes32[]", "name": "proof", "type": "bytes32[]" }
+            ],
+            "internalType": "struct Auth",
+            "name": "auth",
+            "type": "tuple"
+          },
+          { "internalType": "address[]", "name": "toList", "type": "address[]" },
+          { "internalType": "uint256[]", "name": "quantityList", "type": "uint256[]" },
+          { "internalType": "address", "name": "affiliate", "type": "address" },
+          { "internalType": "bytes", "name": "signature", "type": "bytes" }
+        ],
+        "name": "batchMintTo",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              { "internalType": "bytes32", "name": "key", "type": "bytes32" },
+              { "internalType": "bytes32[]", "name": "proof", "type": "bytes32[]" }
+            ],
+            "internalType": "struct Auth",
+            "name": "auth",
+            "type": "tuple"
+          },
+          { "internalType": "uint256", "name": "quantity", "type": "uint256" },
+          { "internalType": "address", "name": "affiliate", "type": "address" },
+          { "internalType": "bytes", "name": "signature", "type": "bytes" }
+        ],
+        "name": "mint",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              { "internalType": "bytes32", "name": "key", "type": "bytes32" },
+              { "internalType": "bytes32[]", "name": "proof", "type": "bytes32[]" }
+            ],
+            "internalType": "struct Auth",
+            "name": "auth",
+            "type": "tuple"
+          },
+          { "internalType": "uint256", "name": "quantity", "type": "uint256" },
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "address", "name": "affiliate", "type": "address" },
+          { "internalType": "bytes", "name": "signature", "type": "bytes" }
+        ],
+        "name": "mintTo",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      // Include other relevant functions and events
+    ];
+
+    // Batch contract ABI
+    const batchContractABI = [
+      {
+        "inputs": [
+          { "internalType": "address[]", "name": "targets", "type": "address[]" },
+          { "internalType": "uint256[]", "name": "values", "type": "uint256[]" },
+          { "internalType": "bytes[]", "name": "datas", "type": "bytes[]" }
+        ],
+        "name": "executeBatch",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      // Include other relevant functions and events if needed
+    ];
+  </script>
 
   <script>
     document.getElementById('analyze-button').addEventListener('click', async () => {
@@ -175,6 +264,10 @@
         const txHashes = Object.keys(txHashToMints);
         const finalAddressToMints = {};
 
+        // Create interfaces with the ABIs
+        const mainContractInterface = new ethers.utils.Interface(mainContractABI);
+        const batchContractInterface = new ethers.utils.Interface(batchContractABI);
+
         for (let i = 0; i < txHashes.length; i++) {
           const txHash = txHashes[i];
           const txData = txHashToMints[txHash];
@@ -182,23 +275,108 @@
 
           // Ensure transaction.value is defined
           const txValue = transaction.value || ethers.BigNumber.from(0);
-          const mintsInTx = txData.count;
 
-          // Calculate value per mint
-          const valuePerMint = txValue.div(mintsInTx);
-
+          let paidQuantity = 0;
+          let totalMintsInTx = txData.count;
+          let valuePerPaidMint = ethers.BigNumber.from(0);
           let includeMints = true;
+
+          // Try to decode the transaction using the main contract ABI
+          let decodedInput;
+          try {
+            decodedInput = mainContractInterface.parseTransaction({
+              data: transaction.data,
+              value: transaction.value,
+            });
+          } catch (err) {
+            // If failed, try to decode using the batch contract ABI
+            try {
+              decodedInput = batchContractInterface.parseTransaction({
+                data: transaction.data,
+                value: transaction.value,
+              });
+
+              // Handle batch transactions
+              if (decodedInput.name === 'executeBatch') {
+                const { targets, values, datas } = decodedInput.args;
+                for (let j = 0; j < datas.length; j++) {
+                  const innerData = datas[j];
+                  const innerValue = values[j];
+                  const targetAddress = targets[j];
+
+                  // Decode the inner transaction
+                  let innerDecoded;
+                  try {
+                    innerDecoded = mainContractInterface.parseTransaction({
+                      data: innerData,
+                      value: innerValue,
+                    });
+                  } catch (innerErr) {
+                    console.warn(`Failed to decode inner transaction in batch: ${innerErr.message}`);
+                    continue;
+                  }
+
+                  // Determine paid quantity from inner transaction
+                  let innerPaidQuantity = 0;
+
+                  if (innerDecoded.name === 'mint' || innerDecoded.name === 'mintTo') {
+                    innerPaidQuantity = innerDecoded.args.quantity.toNumber();
+                  } else if (innerDecoded.name === 'batchMintTo') {
+                    innerPaidQuantity = innerDecoded.args.quantityList.reduce((sum, qty) => sum + qty.toNumber(), 0);
+                  } else {
+                    console.warn(`Unrecognized function ${innerDecoded.name} in inner transaction`);
+                    continue;
+                  }
+
+                  // Accumulate paid quantities
+                  paidQuantity += innerPaidQuantity;
+                }
+              } else {
+                console.warn(`Unrecognized batch function ${decodedInput.name}`);
+                continue;
+              }
+            } catch (batchErr) {
+              // If still fails, we can't decode the transaction
+              console.warn(`Failed to decode transaction ${txHash}: ${batchErr.message}`);
+              // As a fallback, use total mints in transaction
+              paidQuantity = totalMintsInTx;
+            }
+          }
+
+          // If we successfully decoded the transaction, and paidQuantity is determined
+          if (paidQuantity > 0) {
+            valuePerPaidMint = txValue.div(paidQuantity);
+          } else {
+            // Fallback to average value per mint
+            valuePerPaidMint = txValue.div(totalMintsInTx);
+            paidQuantity = totalMintsInTx;
+          }
+
           if (requiredAmountWei) {
-            includeMints = valuePerMint.gte(requiredAmountWei);
+            includeMints = valuePerPaidMint.gte(requiredAmountWei);
           }
 
           if (includeMints) {
-            // Increment mints for each address involved in this transaction
-            for (const toAddress of txData.toAddresses) {
-              if (!finalAddressToMints[toAddress]) {
-                finalAddressToMints[toAddress] = 0;
+            // Distribute the paid mints among the addresses
+            const toAddresses = txData.toAddresses;
+            const mintsPerAddress = {};
+
+            // Count mints per address in this transaction
+            toAddresses.forEach((address) => {
+              if (!mintsPerAddress[address]) {
+                mintsPerAddress[address] = 0;
               }
-              finalAddressToMints[toAddress] += 1;
+              mintsPerAddress[address] += 1;
+            });
+
+            // Calculate the proportion of paid mints per address
+            const totalMints = Object.values(mintsPerAddress).reduce((a, b) => a + b, 0);
+            for (const [address, mints] of Object.entries(mintsPerAddress)) {
+              const addressPaidMints = Math.round((mints / totalMints) * paidQuantity);
+              if (!finalAddressToMints[address]) {
+                finalAddressToMints[address] = 0;
+              }
+              finalAddressToMints[address] += addressPaidMints;
             }
           }
 
