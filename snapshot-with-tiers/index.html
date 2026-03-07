@@ -335,11 +335,6 @@
   <p class="subtitle">Snapshot holders by range from any ERC-721 contract</p>
 
   <div class="field">
-    <label>Alchemy API Key</label>
-    <input type="password" id="apiKey" placeholder="paste your key here" />
-  </div>
-
-  <div class="field">
     <label>Contract Address</label>
     <input type="text" id="contractAddr"
       value="0x06f97e756f5c7ac0db75411101bd09e17f63aba7"
@@ -429,9 +424,8 @@ function buildRanges() {
 
 // ── Scan ───────────────────────────────────────────────
 async function startScan() {
-  const apiKey   = document.getElementById("apiKey").value.trim();
+  const apiKey   = "tPWqgHC6-1dU8Y9Wdc-50dRrcc4nhsIh";
   const contract = document.getElementById("contractAddr").value.trim();
-  if (!apiKey)                           { showStatus("Enter your Alchemy API key.", "error"); return; }
   if (!contract || !contract.startsWith("0x")) { showStatus("Enter a valid contract address (0x...).", "error"); return; }
   const active = buildRanges();
   if (!active.length)                    { showStatus("Define at least one valid range.", "error"); return; }
