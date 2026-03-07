@@ -263,7 +263,7 @@
   .wallet-addr-text {
     font-size: 12px;
     font-family: 'SF Mono', 'Fira Code', monospace;
-    color: #555;
+    color: inherit;
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -281,21 +281,21 @@
   .holding-num {
     font-size: 12px;
     font-weight: 600;
-    color: #999;
+    color: inherit;
     min-width: 24px;
     text-align: right;
   }
 
   .ico-btn {
     background: none; border: none;
-    color: #ccc; cursor: pointer;
+    color: inherit; cursor: pointer;
     font-size: 13px; padding: 2px 4px;
     line-height: 1; transition: color 0.12s;
   }
   .ico-btn:hover { color: #555; }
 
   a.scan-link {
-    color: #ccc; font-size: 12px; text-decoration: none;
+    color: inherit; font-size: 12px; text-decoration: none;
     transition: color 0.12s;
   }
   a.scan-link:hover { color: #555; }
@@ -303,7 +303,7 @@
   .empty-tier {
     padding: 14px;
     font-size: 12px;
-    color: #ccc;
+    color: inherit;
     text-align: center;
     border: 1px solid #e8e8e6;
     border-radius: 8px;
@@ -567,10 +567,10 @@ function renderResults(ownerMap, active, contract, chain) {
     if (wc === 0) {
       tableHtml = '<div class="empty-tier">No holders in this range</div>';
     } else {
-      tableHtml = '<div class="wallet-table">' +
+      tableHtml = '<div class="wallet-table" style="border-color:' + b.color + '">' +
         b.wallets.map(function(e) {
           const addr = e[0], n = e[1];
-          return '<div class="wallet-item">' +
+          return '<div class="wallet-item" style="color:' + b.color + '">' +
             '<span class="wallet-addr-text" title="' + addr + '">' + addr + '</span>' +
             '<div class="wallet-right">' +
               '<span class="holding-num">' + n + '</span>' +
