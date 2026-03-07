@@ -62,6 +62,22 @@
   input:focus { border-color: #aaa; }
   input::placeholder { color: #bbb; }
 
+  select {
+    width: 100%;
+    border: 1px solid #e0e0de;
+    border-radius: 6px;
+    padding: 10px 36px 10px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #111;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23bbb'/%3E%3C/svg%3E") no-repeat right 12px center;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    cursor: pointer;
+  }
+  select:focus { border-color: #aaa; }
+
   /* ── RANGES ── */
   #rangesEditor { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 
@@ -332,13 +348,37 @@
 <div class="page">
 
   <h1>NFT Holder Scanner</h1>
-  <p class="subtitle">Snapshot holders by range from any ERC-721 contract</p>
+  <p class="subtitle">Snapshot holders by range from any ERC-721 contract across multiple chains</p>
+
+  <div class="field">
+    <label>Chain</label>
+    <select id="chainSelect">
+      <option value="eth-mainnet">Ethereum</option>
+      <option value="eth-sepolia">Ethereum Sepolia</option>
+      <option value="eth-goerli">Ethereum Goerli</option>
+      <option value="abstract-mainnet">Abstract</option>
+      <option value="polygon-mainnet">Polygon</option>
+      <option value="polygon-mumbai">Polygon Mumbai</option>
+      <option value="opt-mainnet">Optimism</option>
+      <option value="opt-sepolia">Optimism Sepolia</option>
+      <option value="opt-goerli">Optimism Goerli</option>
+      <option value="arb-mainnet">Arbitrum</option>
+      <option value="base-mainnet">Base</option>
+      <option value="astar-mainnet">Astar</option>
+      <option value="starknet-mainnet">Starknet</option>
+      <option value="ink-mainnet">Ink</option>
+      <option value="avax-mainnet">Avalanche</option>
+      <option value="berachain-mainnet">Berachain</option>
+      <option value="apechain-mainnet">ApeChain</option>
+      <option value="monad-mainnet">Monad</option>
+      <option value="monad-testnet">Monad Testnet</option>
+    </select>
+  </div>
 
   <div class="field">
     <label>Contract Address</label>
     <input type="text" id="contractAddr"
-      value="0x06f97e756f5c7ac0db75411101bd09e17f63aba7"
-      placeholder="0x..." />
+      placeholder="0x06f97e756f5c7ac0db75411101bd09e17f63aba7" />
   </div>
 
   <div class="field">
@@ -354,6 +394,29 @@
 
 </div>
 <script>
+// ── Chains ────────────────────────────────────────────
+const CHAINS = {
+  'eth-mainnet':       { label: 'Ethereum',           explorer: 'https://etherscan.io' },
+  'eth-sepolia':       { label: 'Ethereum Sepolia',   explorer: 'https://sepolia.etherscan.io' },
+  'eth-goerli':        { label: 'Ethereum Goerli',    explorer: 'https://goerli.etherscan.io' },
+  'abstract-mainnet':  { label: 'Abstract',           explorer: 'https://abscan.org' },
+  'polygon-mainnet':   { label: 'Polygon',            explorer: 'https://polygonscan.com' },
+  'polygon-mumbai':    { label: 'Polygon Mumbai',     explorer: 'https://mumbai.polygonscan.com' },
+  'opt-mainnet':       { label: 'Optimism',           explorer: 'https://optimistic.etherscan.io' },
+  'opt-sepolia':       { label: 'Optimism Sepolia',   explorer: 'https://sepolia-optimism.etherscan.io' },
+  'opt-goerli':        { label: 'Optimism Goerli',    explorer: 'https://goerli-optimism.etherscan.io' },
+  'arb-mainnet':       { label: 'Arbitrum',           explorer: 'https://arbiscan.io' },
+  'base-mainnet':      { label: 'Base',               explorer: 'https://basescan.org' },
+  'astar-mainnet':     { label: 'Astar',              explorer: 'https://astar.subscan.io',    addressPath: '/account/' },
+  'starknet-mainnet':  { label: 'Starknet',           explorer: 'https://starkscan.co',        addressPath: '/contract/' },
+  'ink-mainnet':       { label: 'Ink',                explorer: 'https://explorer.inkonchain.com' },
+  'avax-mainnet':      { label: 'Avalanche',          explorer: 'https://snowtrace.io' },
+  'berachain-mainnet': { label: 'Berachain',          explorer: 'https://berascan.com' },
+  'apechain-mainnet':  { label: 'ApeChain',           explorer: 'https://apescan.io' },
+  'monad-mainnet':     { label: 'Monad',              explorer: 'https://monadexplorer.com' },
+  'monad-testnet':     { label: 'Monad Testnet',      explorer: 'https://testnet.monadexplorer.com' },
+};
+
 // ── State ─────────────────────────────────────────────
 let ranges = [
   { min: 5,  max: 10,  inf: false, color: "#f0a030" },
@@ -435,9 +498,10 @@ async function startScan() {
   showStatus("Connecting…", "loading");
 
   try {
-    const ownerMap = await fetchOwners(apiKey, contract);
+    const chain = document.getElementById("chainSelect").value;
+    const ownerMap = await fetchOwners(apiKey, contract, chain);
     hideStatus();
-    renderResults(ownerMap, active, contract);
+    renderResults(ownerMap, active, contract, chain);
   } catch(e) {
     showStatus(e.message || "Fetch failed. Check your API key.", "error");
   } finally {
@@ -446,8 +510,8 @@ async function startScan() {
 }
 
 // ── Fetch ──────────────────────────────────────────────
-async function fetchOwners(apiKey, contract) {
-  const base = "https://eth-mainnet.g.alchemy.com/nft/v3/" + apiKey;
+async function fetchOwners(apiKey, contract, chain) {
+  const base = "https://" + chain + ".g.alchemy.com/nft/v3/" + apiKey;
   let pageKey = null, ownerMap = {}, page = 0;
   do {
     page++;
@@ -473,7 +537,10 @@ async function fetchOwners(apiKey, contract) {
 }
 
 // ── Render ─────────────────────────────────────────────
-function renderResults(ownerMap, active, contract) {
+function renderResults(ownerMap, active, contract, chain) {
+  const chainInfo = CHAINS[chain] || CHAINS['eth-mainnet'];
+  const explorerBase = chainInfo.explorer;
+  const explorerAddrPath = chainInfo.addressPath || '/address/';
   const total = Object.keys(ownerMap).length;
   const shortContract = contract.slice(0,6) + "…" + contract.slice(-4);
 
@@ -508,7 +575,7 @@ function renderResults(ownerMap, active, contract) {
             '<div class="wallet-right">' +
               '<span class="holding-num">' + n + '</span>' +
               '<button class="ico-btn" onclick="copyText(\'' + addr + '\',this)" title="Copy">⧉</button>' +
-              '<a class="scan-link" href="https://etherscan.io/address/' + addr + '" target="_blank" title="Etherscan">↗</a>' +
+              '<a class="scan-link" href="' + explorerBase + explorerAddrPath + addr + '" target="_blank" title="Explorer">↗</a>' +
             '</div>' +
           '</div>';
         }).join("") +
