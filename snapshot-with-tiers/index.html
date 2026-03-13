@@ -1,661 +1,1452 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NFT Holder Scanner</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFT Holder Scanner</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  body {
-    background: #f9f9f8;
-    color: #111;
-    font-family: 'Inter', system-ui, sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-    padding: 60px 24px 80px;
-  }
+    body {
+      background: #f9f9f8;
+      color: #111;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 60px 24px 80px;
+    }
 
-  .page { max-width: 620px; margin: 0 auto; }
+    [v-cloak] {
+      display: none;
+    }
 
-  /* ── HEADER ── */
-  h1 {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin-bottom: 4px;
-    color: #111;
-  }
-  .subtitle { color: #888; font-size: 13px; margin-bottom: 40px; }
-  .subtitle a { color: inherit; }
+    .page {
+      max-width: 620px;
+      margin: 0 auto;
+    }
 
-  /* ── FORM SECTIONS ── */
-  .field { margin-bottom: 24px; }
-  label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 8px;
-  }
+    /* ── HEADER ── */
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      color: #111;
+    }
 
-  input[type="text"],
-  input[type="password"],
-  input[type="number"] {
-    width: 100%;
-    border: 1px solid #e0e0de;
-    border-radius: 6px;
-    padding: 10px 12px;
-    font-family: inherit;
-    font-size: 13px;
-    color: #111;
-    background: #fff;
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: textfield;
-  }
-  input[type="number"] { -moz-appearance: textfield; }
-  input[type="number"]::-webkit-inner-spin-button { display: none; }
-  input:focus { border-color: #aaa; }
-  input::placeholder { color: #bbb; }
+    .subtitle {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 40px;
+    }
 
-  select {
-    width: 100%;
-    border: 1px solid #e0e0de;
-    border-radius: 6px;
-    padding: 10px 36px 10px 12px;
-    font-family: inherit;
-    font-size: 13px;
-    color: #111;
-    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23bbb'/%3E%3C/svg%3E") no-repeat right 12px center;
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: none;
-    cursor: pointer;
-  }
-  select:focus { border-color: #aaa; }
+    .subtitle a {
+      color: inherit;
+    }
 
-  /* ── RANGES ── */
-  #rangesEditor { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    /* ── FORM SECTIONS ── */
+    .field {
+      margin-bottom: 24px;
+    }
 
-  .range-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #fff;
-    border: 1px solid #e0e0de;
-    border-radius: 6px;
-    padding: 8px 10px;
-  }
+    .field--flush {
+      margin-bottom: 0;
+    }
 
-  .range-row input[type="number"] {
-    width: 72px;
-    text-align: center;
-    padding: 7px 8px;
-    border-radius: 5px;
-    font-size: 13px;
-  }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
 
-  .sep { color: #ccc; font-size: 13px; flex-shrink: 0; }
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid #e0e0de;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #111;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: textfield;
+    }
 
-  .inf-label {
-    display: flex; align-items: center; gap: 5px;
-    font-size: 12px; color: #999; cursor: pointer;
-    flex-shrink: 0; user-select: none; white-space: nowrap;
-  }
-  .inf-label input[type="checkbox"] { accent-color: #111; cursor: pointer; width: 13px; height: 13px; }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
 
-  input[type="color"] {
-    width: 28px; height: 28px;
-    border: 1px solid #e0e0de;
-    border-radius: 4px;
-    padding: 2px;
-    background: #fff;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
+    input[type="number"]::-webkit-inner-spin-button {
+      display: none;
+    }
 
-  .btn-remove {
-    background: none; border: none;
-    color: #ccc; font-size: 16px; cursor: pointer;
-    padding: 0 2px; line-height: 1;
-    margin-left: auto; flex-shrink: 0;
-    transition: color 0.15s;
-  }
-  .btn-remove:hover { color: #e05050; }
+    input:focus {
+      border-color: #aaa;
+    }
 
-  .btn-add-range {
-    width: 100%;
-    background: none;
-    border: 1px dashed #d8d8d6;
-    border-radius: 6px;
-    padding: 9px;
-    font-family: inherit;
-    font-size: 12px;
-    color: #aaa;
-    cursor: pointer;
-    transition: all 0.15s;
-    letter-spacing: 0.02em;
-  }
-  .btn-add-range:hover { border-color: #bbb; color: #666; background: #fafaf9; }
+    input::placeholder {
+      color: #bbb;
+    }
 
-  /* ── SCAN BUTTON ── */
-  .btn-scan {
-    width: 100%;
-    background: #111;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 13px;
-    font-family: inherit;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: background 0.15s, transform 0.1s;
-    letter-spacing: 0.01em;
-  }
-  .btn-scan:hover:not(:disabled) { background: #222; }
-  .btn-scan:active:not(:disabled) { transform: scale(0.99); }
-  .btn-scan:disabled { background: #ccc; cursor: not-allowed; }
+    select {
+      width: 100%;
+      border: 1px solid #e0e0de;
+      border-radius: 6px;
+      padding: 10px 36px 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #111;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23bbb'/%3E%3C/svg%3E") no-repeat right 12px center;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+      cursor: pointer;
+    }
 
-  /* ── STATUS ── */
-  .status {
-    margin-top: 20px;
-    font-size: 13px;
-    padding: 10px 14px;
-    border-radius: 6px;
-  }
-  .status.loading { background: #f4f4f2; color: #888; animation: pulse 1.2s ease-in-out infinite; }
-  .status.error   { background: #fff0f0; color: #c04040; border: 1px solid #f0cece; }
-  @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
-  .hidden { display: none !important; }
+    select:focus {
+      border-color: #aaa;
+    }
 
-  /* ── RESULTS ── */
-  #results { margin-top: 36px; }
+    /* ── RANGES ── */
+    #rangesEditor {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
 
-  .results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid #e8e8e6;
-  }
-  .results-title { font-size: 15px; font-weight: 600; color: #111; }
-  .results-meta  { font-size: 12px; color: #aaa; }
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e0e0de;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
 
-  .tier-block { margin-bottom: 28px; }
+    .range-row input[type="number"] {
+      width: 72px;
+      text-align: center;
+      padding: 7px 8px;
+      border-radius: 5px;
+      font-size: 13px;
+    }
 
-  .tier-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
+    .sep {
+      color: #ccc;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
 
-  .tier-name {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+    .no-limit-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+      flex-shrink: 0;
+      user-select: none;
+      white-space: nowrap;
+    }
 
-  .tier-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: inline-block;
-  }
+    .no-limit-label input[type="checkbox"] {
+      accent-color: #111;
+      cursor: pointer;
+      width: 13px;
+      height: 13px;
+    }
 
-  .tier-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
+    input[type="color"] {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #e0e0de;
+      border-radius: 4px;
+      padding: 2px;
+      background: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
 
-  .count-pill {
-    font-size: 11px;
-    color: #999;
-    background: #f0f0ee;
-    border-radius: 20px;
-    padding: 2px 9px;
-  }
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      margin-left: auto;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
 
-  .btn-copy-tier {
-    background: none;
-    border: 1px solid #e0e0de;
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-family: inherit;
-    font-size: 11px;
-    color: #888;
-    cursor: pointer;
-    transition: all 0.15s;
-    letter-spacing: 0.02em;
-  }
-  .btn-copy-tier:hover { border-color: #bbb; color: #333; }
+    .btn-remove:hover {
+      color: #e05050;
+    }
 
-  .wallet-table {
-    border: 1px solid #e8e8e6;
-    border-radius: 8px;
-    overflow: hidden;
-  }
+    .btn-add-range {
+      width: 100%;
+      background: none;
+      border: 1px dashed #d8d8d6;
+      border-radius: 6px;
+      padding: 9px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #aaa;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.02em;
+      margin-top: 6px;
+    }
 
-  .wallet-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 14px;
-    border-bottom: 1px solid #f0f0ee;
-    gap: 12px;
-    transition: background 0.1s;
-  }
-  .wallet-item:last-child { border-bottom: none; }
-  .wallet-item:hover { background: #fafaf9; }
+    .btn-add-range:hover {
+      border-color: #bbb;
+      color: #666;
+      background: #fafaf9;
+    }
 
-  .wallet-addr-text {
-    font-size: 12px;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    color: inherit;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+    /* ── SCAN BUTTON ── */
+    .btn-scan {
+      width: 100%;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 13px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
 
-  .wallet-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
+    .btn-scan:hover:not(:disabled) {
+      background: #222;
+    }
 
-  .holding-num {
-    font-size: 12px;
-    font-weight: 600;
-    color: inherit;
-    min-width: 24px;
-    text-align: right;
-  }
+    .btn-scan:active:not(:disabled) {
+      transform: scale(0.99);
+    }
 
-  .ico-btn {
-    background: none; border: none;
-    color: inherit; cursor: pointer;
-    font-size: 13px; padding: 2px 4px;
-    line-height: 1; transition: color 0.12s;
-  }
-  .ico-btn:hover { color: #555; }
+    .btn-scan:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
 
-  a.scan-link {
-    color: inherit; font-size: 12px; text-decoration: none;
-    transition: color 0.12s;
-  }
-  a.scan-link:hover { color: #555; }
+    /* ── STATUS ── */
+    .status {
+      margin-top: 20px;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
 
-  .empty-tier {
-    padding: 14px;
-    font-size: 12px;
-    color: inherit;
-    text-align: center;
-    border: 1px solid #e8e8e6;
-    border-radius: 8px;
-  }
+    .status.loading {
+      background: #f4f4f2;
+      color: #888;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
 
-  .btn-toggle {
-    background: none;
-    border: 1px solid #e0e0de;
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-family: inherit;
-    font-size: 11px;
-    color: #888;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    letter-spacing: 0.02em;
-  }
-  .btn-toggle:hover { border-color: #bbb; color: #333; }
+    .status.error {
+      background: #fff0f0;
+      color: #c04040;
+      border: 1px solid #f0cece;
+    }
 
-  .chevron-icon {
-    display: inline-block;
-    transition: transform 0.2s ease;
-    font-style: normal;
-    font-size: 10px;
-  }
-  .chevron-icon.open { transform: rotate(180deg); }
+    @keyframes pulse {
 
-  .tier-body { display: none; margin-top: 8px; }
-  .tier-body.open { display: block; }
+      0%,
+      100% {
+        opacity: 0.6
+      }
 
-  .divider {
-    border: none;
-    border-top: 1px solid #e8e8e6;
-    margin: 28px 0;
-  }
+      50% {
+        opacity: 1
+      }
+    }
 
-  #sticky-link {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    padding: 5px;
-    border-radius: 5px;
-    text-decoration: underline;
-    color: #111;
-  }
-</style>
+    /* ── RESULTS ── */
+    #results {
+      margin-top: 36px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #e8e8e6;
+    }
+
+    .results-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .results-meta {
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    .tier-block {
+      margin-bottom: 28px;
+    }
+
+    .tier-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tier-name {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tier-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    .tier-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .count-pill {
+      font-size: 11px;
+      color: #999;
+      background: #f0f0ee;
+      border-radius: 20px;
+      padding: 2px 9px;
+    }
+
+    .btn-copy-tier {
+      background: none;
+      border: 1px solid #e0e0de;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-copy-tier:hover {
+      border-color: #bbb;
+      color: #333;
+    }
+
+    .wallet-table {
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .wallet-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      border-bottom: 1px solid #f0f0ee;
+      gap: 12px;
+      transition: background 0.1s;
+    }
+
+    .wallet-item:last-child {
+      border-bottom: none;
+    }
+
+    .wallet-item:hover {
+      background: #fafaf9;
+    }
+
+    .wallet-addr-text {
+      font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: inherit;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wallet-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .holding-num {
+      font-size: 12px;
+      font-weight: 600;
+      color: inherit;
+      min-width: 24px;
+      text-align: right;
+    }
+
+    .ico-btn {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px 4px;
+      line-height: 1;
+      transition: color 0.12s;
+    }
+
+    .ico-btn:hover {
+      color: #555;
+    }
+
+    a.scan-link {
+      color: inherit;
+      font-size: 12px;
+      text-decoration: none;
+      transition: color 0.12s;
+    }
+
+    a.scan-link:hover {
+      color: #555;
+    }
+
+    .empty-tier {
+      padding: 14px;
+      font-size: 12px;
+      color: inherit;
+      text-align: center;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+    }
+
+    .btn-toggle {
+      background: none;
+      border: 1px solid #e0e0de;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-toggle:hover {
+      border-color: #bbb;
+      color: #333;
+    }
+
+    .chevron-icon {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      font-style: normal;
+      font-size: 10px;
+    }
+
+    .chevron-icon.open {
+      transform: rotate(180deg);
+    }
+
+    .tier-body {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .tier-body.open {
+      display: block;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #e8e8e6;
+      margin: 24px 0;
+    }
+
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #111;
+    }
+
+    /* ── DETECT STATUS ── */
+    .detect-status {
+      font-size: 11px;
+      margin-top: 6px;
+      min-height: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .detect-status.ok {
+      color: #16a34a;
+    }
+
+    .detect-status.err {
+      color: #d97706;
+    }
+
+    .detect-status.spin {
+      color: #aaa;
+    }
+
+    @keyframes spin-dot {
+
+      0%,
+      100% {
+        opacity: 0.3;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .detect-status.spin::before {
+      content: '⟳ ';
+      display: inline-block;
+      animation: spin-dot 1s ease-in-out infinite;
+      position: relative;
+      top: -1px;
+      margin-right: 1px;
+    }
+
+    input.detecting {
+      border-color: #aaa;
+      color: #aaa;
+      background: #fafaf9;
+    }
+
+    /* ── GRID ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* ── PROGRESS ── */
+    .progress-section {
+      margin-top: 28px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: #ebebea;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #111;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: #aaa;
+      text-align: right;
+    }
+
+    /* ── STATS ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    /* ── FAILED INFO ── */
+    .failed-box {
+      margin-top: 12px;
+      background: #fff8f8;
+      border: 1px solid #f0d8d8;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #c04040;
+      line-height: 1.6;
+    }
+
+    /* ── LOG ── */
+    .log-wrap {
+      margin-top: 20px;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .log-title {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    .btn-clear-log {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 11px;
+      color: #ccc;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .btn-clear-log:hover {
+      color: #888;
+    }
+
+    .log-box {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 14px;
+      height: 260px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .log-box::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .log-box::-webkit-scrollbar-thumb {
+      background: #e0e0de;
+      border-radius: 2px;
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-time {
+      color: #ccc;
+      flex-shrink: 0;
+    }
+
+    .ok {
+      color: #16a34a;
+    }
+
+    .error {
+      color: #dc2626;
+    }
+
+    .info {
+      color: #555;
+    }
+
+    .warning {
+      color: #d97706;
+    }
+
+    .faded {
+      opacity: 0.3;
+    }
+  </style>
 </head>
+
 <body>
-<a id="sticky-link" href="../">Scatter Partners Webtools</a>
-<div class="page">
+  <a id="sticky-link" href="../">Scatter Partners Webtools</a>
+  <div id="app" class="page" v-cloak>
 
-  <h1>NFT Holder Scanner</h1>
-  <p class="subtitle">
-    Snapshot holders by range from any ERC-721 contract across multiple chains.<br />
-    Based on Bluu's <a href="https://github.com/bluudmg/NFT-Tools-" target="_blank">code</a>.
-  </p>
+    <h1>NFT Holder Scanner</h1>
+    <p class="subtitle">
+      Snapshot holders by range · any ERC-721 contract · ownerOf scan<br />
+      Inspired by Bluu's <a href="https://github.com/bluudmg/NFT-Tools-" target="_blank" rel="noopener noreferrer">code</a>.
+    </p>
 
-  <div class="field">
-    <label>Chain</label>
-    <select id="chainSelect">
-      <option value="eth-mainnet">Ethereum</option>
-      <option value="eth-sepolia">Ethereum Sepolia</option>
-      <option value="eth-goerli">Ethereum Goerli</option>
-      <option value="abstract-mainnet">Abstract</option>
-      <option value="polygon-mainnet">Polygon</option>
-      <option value="polygon-mumbai">Polygon Mumbai</option>
-      <option value="opt-mainnet">Optimism</option>
-      <option value="opt-sepolia">Optimism Sepolia</option>
-      <option value="opt-goerli">Optimism Goerli</option>
-      <option value="arb-mainnet">Arbitrum</option>
-      <option value="base-mainnet">Base</option>
-      <option value="astar-mainnet">Astar</option>
-      <option value="starknet-mainnet">Starknet</option>
-      <option value="ink-mainnet">Ink</option>
-      <option value="avax-mainnet">Avalanche</option>
-      <option value="berachain-mainnet">Berachain</option>
-      <option value="apechain-mainnet">ApeChain</option>
-      <option value="monad-mainnet">Monad</option>
-      <option value="monad-testnet">Monad Testnet</option>
-    </select>
+    <div class="field">
+      <label>Chain</label>
+      <select v-model="formState.chain" @change="onChainChange" :disabled="scanState.scanning">
+        <option v-for="chainKey in chainOrder" :key="chainKey" :value="chainKey">{{ CHAIN_REGISTRY[chainKey].label }}
+        </option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Contract Address</label>
+      <input type="text" v-model.trim="formState.contractAddr" placeholder="0x06f97e756f5c7ac0db75411101bd09e17f63aba7"
+        @input="onContractInput" :readonly="scanState.scanning" />
+      <div class="detect-status" :class="detectState.type">{{ detectState.message }}</div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="grid-2">
+      <div class="field field--flush">
+        <label>Token ID Start</label>
+        <input type="number" placeholder="Auto" v-model="formState.tokenStart"
+          :class="{ detecting: detectState.detectingStart }" @input="onTokenStartInput"
+          :disabled="scanState.scanning" />
+      </div>
+      <div class="field field--flush">
+        <label>Token ID End</label>
+        <input type="number" placeholder="Auto" v-model="formState.tokenEnd"
+          :class="{ detecting: detectState.detectingEnd }" @input="onTokenEndInput" :disabled="scanState.scanning" />
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="field">
+      <label>Holder Ranges</label>
+      <div id="rangesEditor">
+        <div class="range-row" v-for="(range, index) in ranges" :key="index">
+          <input type="number" min="0" placeholder="Min" v-model.number="range.min" :disabled="scanState.scanning" />
+          <span class="sep">to</span>
+          <input type="number" min="0" placeholder="Max" v-model.number="range.max"
+            :disabled="scanState.scanning || range.noLimit" :class="{ faded: range.noLimit }" />
+          <label class="no-limit-label">
+            <input type="checkbox" :checked="range.noLimit" @change="toggleNoLimit(index, $event.target.checked)"
+              :disabled="scanState.scanning" />
+            no limit
+          </label>
+          <input type="color" v-model="range.color" :disabled="scanState.scanning" />
+          <button class="btn-remove" @click="removeRange(index)" title="Remove"
+            :disabled="scanState.scanning">×</button>
+        </div>
+      </div>
+      <button class="btn-add-range" @click="addRange" :disabled="scanState.scanning">+ Add
+        range</button>
+    </div>
+
+    <button class="btn-scan" @click="startScan" :disabled="scanState.scanning">{{ scanState.scanning ? 'Scanning...' :
+      'Scan holders' }}</button>
+
+    <div v-if="statusState.visible" class="status" :class="statusState.type">{{ statusState.message }}
+    </div>
+
+    <div v-if="scanState.showProgress" class="progress-section">
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: `${scanState.progressPercent}%` }"></div>
+      </div>
+      <div class="progress-label">{{ scanState.progressLabel }}</div>
+    </div>
+
+    <div v-if="scanState.showStats" class="stats">
+      <div class="stat-card">
+        <div class="stat-val">{{ stats.holders }}</div>
+        <div class="stat-label">Unique Holders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">{{ stats.supply }}</div>
+        <div class="stat-label">Tokens Found</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">{{ stats.failed }}</div>
+        <div class="stat-label">Failed / Burned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">{{ stats.progress }}</div>
+        <div class="stat-label">Queried</div>
+      </div>
+    </div>
+
+    <div class="failed-box" v-if="scanState.failedInfo">{{ scanState.failedInfo }}
+    </div>
+
+    <div v-if="scanState.showLog" class="log-wrap">
+      <div class="log-header">
+        <span class="log-title">Activity log</span>
+        <button class="btn-clear-log" @click="clearLog">Clear</button>
+      </div>
+      <div class="log-box" ref="logBoxRef">
+        <div class="log-entry" v-for="(entry, index) in scanState.logs" :key="index">
+          <span class="log-time">{{ entry.time }}</span><span :class="entry.type">{{ entry.message }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="results" v-if="scanState.showResults">
+      <div class="results-header">
+        <span class="results-title">{{ scanState.shortContract }}</span>
+        <span class="results-meta">{{ scanState.totalHolders }} unique holders</span>
+      </div>
+
+      <template v-for="(bucket, index) in scanState.bucketed" :key="index">
+        <div class="tier-block">
+          <div class="tier-top">
+            <span class="tier-name"><span class="tier-dot" :style="{ background: bucket.color }"></span>{{
+              rangeLabel(bucket) }} holders</span>
+            <div class="tier-actions">
+              <span class="count-pill">{{ bucket.wallets.length }}</span>
+              <button class="btn-copy-tier" @click="copyBucket(index, $event)">Copy all</button>
+              <button class="btn-toggle" @click="toggleBody(index)"><i class="chevron-icon"
+                  :class="{ open: isTierOpen(index) }">▼</i></button>
+            </div>
+          </div>
+
+          <div class="tier-body" :class="{ open: isTierOpen(index) }">
+            <div v-if="bucket.wallets.length === 0" class="empty-tier">No holders in this range</div>
+            <div v-else class="wallet-table" :style="{ borderColor: bucket.color }">
+              <div class="wallet-item" v-for="wallet in bucket.wallets" :key="wallet.address"
+                :style="{ color: bucket.color }">
+                <span class="wallet-addr-text" :title="wallet.address">{{ wallet.address }}</span>
+                <div class="wallet-right">
+                  <span class="holding-num">{{ wallet.count }}</span>
+                  <button class="ico-btn" @click="copyText(wallet.address, wallet.count, $event)" title="Copy">⧉</button>
+                  <a class="scan-link" :href="`${scanState.explorerBase}${scanState.explorerAddrPath}${wallet.address}`"
+                    target="_blank" rel="noopener noreferrer" title="Explorer">↗</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider" v-if="index < scanState.bucketed.length - 1" />
+      </template>
+    </div>
   </div>
 
-  <div class="field">
-    <label>Contract Address</label>
-    <input type="text" id="contractAddr"
-      placeholder="0x06f97e756f5c7ac0db75411101bd09e17f63aba7" />
-  </div>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script>
+    const app = Vue.createApp({
+      setup() {
+        // ── Constants ──
+        const OWNER_OF_SIG = '0x6352211e' // ownerOf(uint256)
+        const TOTAL_SUPPLY_SIG = '0x18160ddd' // totalSupply()
+        const RETRY_DELAYS_MS = [3000, 6000, 12000, 24000, 48000]
+        const ALCHEMY_KEY = 'tPWqgHC6-1dU8Y9Wdc-50dRrcc4nhsIh'
 
-  <div class="field">
-    <label>Holder Ranges</label>
-    <div id="rangesEditor"></div>
-    <button class="btn-add-range" onclick="addRange()" style="margin-top:6px;">+ Add range</button>
-  </div>
+        const CHAIN_REGISTRY = {
+          'eth-mainnet': { label: 'Ethereum', explorer: 'https://etherscan.io', publicRpc: 'https://eth.drpc.org', batchSize: 3 },
+          'base-mainnet': { label: 'Base', explorer: 'https://basescan.org', publicRpc: 'https://base.drpc.org', batchSize: 3 },
+          'arb-mainnet': { label: 'Arbitrum', explorer: 'https://arbiscan.io', publicRpc: 'https://arbitrum.drpc.org', batchSize: 3 },
+          // 'sanko-mainnet': { ... }, // not implemented yet
+          'polygon-mainnet': { label: 'Polygon', explorer: 'https://polygonscan.com', publicRpc: 'https://polygon.drpc.org' },
+          'apechain-mainnet': { label: 'ApeChain', explorer: 'https://apescan.io', publicRpc: 'https://rpc.apechain.com' },
+          'abstract-mainnet': { label: 'Abstract', explorer: 'https://abscan.org', publicRpc: 'https://api.mainnet.abs.xyz' },
+          'ink-mainnet': { label: 'Ink', explorer: 'https://explorer.inkonchain.com', publicRpc: 'https://rpc-gel.inkonchain.com' },
+          'superposition-mainnet': { label: 'Superposition', explorer: 'https://explorer.superposition.so', publicRpc: 'https://rpc.superposition.so', batchSize: 13, concurrency: 1, scanDelayMs: 500, alchemyFallback: false },
+          // 'mantle-mainnet': { ... }, // not implemented yet
+          'berachain-mainnet': { label: 'Berachain', explorer: 'https://berascan.com', publicRpc: 'https://berachain.drpc.org', batchSize: 3 },
+          'hyperliquid-mainnet': { label: 'Hyperliquid', explorer: 'https://www.hyperscan.com', publicRpc: 'https://hyperliquid.drpc.org', batchSize: 3, alchemyFallback: false },
+          'monad-mainnet': { label: 'Monad', explorer: 'https://monadexplorer.com', publicRpc: 'https://monad-mainnet.drpc.org'},
+          'megaeth-mainnet': { label: 'MegaETH', explorer: 'https://megaeth.blockscout.com', publicRpc: 'https://mainnet.megaeth.com/rpc', concurrency: 5, alchemyFallback: false },
+        }
 
-  <button class="btn-scan" id="scanBtn" onclick="startScan()">Scan holders</button>
+        const DEFAULT_RANGES = [
+          { min: 5, max: 10, noLimit: false, color: '#f0a030' },
+          { min: 11, max: 20, noLimit: false, color: '#9b72cf' },
+          { min: 21, max: 30, noLimit: false, color: '#4a9edd' },
+          { min: 31, max: 999, noLimit: true, color: '#3dbf90' }
+        ]
 
-  <div id="status" class="status hidden"></div>
-  <div id="results" class="hidden"></div>
+        const PALETTE = ['#f0a030', '#9b72cf', '#4a9edd', '#3dbf90', '#e05080', '#60b040', '#d06040', '#4080d0']
+        const ZERO_ADDR = '0x0000000000000000000000000000000000000000'
 
-</div>
-<script>
-// ── Chains ────────────────────────────────────────────
-const CHAINS = {
-  'eth-mainnet':       { label: 'Ethereum',           explorer: 'https://etherscan.io' },
-  'eth-sepolia':       { label: 'Ethereum Sepolia',   explorer: 'https://sepolia.etherscan.io' },
-  'eth-goerli':        { label: 'Ethereum Goerli',    explorer: 'https://goerli.etherscan.io' },
-  'abstract-mainnet':  { label: 'Abstract',           explorer: 'https://abscan.org' },
-  'polygon-mainnet':   { label: 'Polygon',            explorer: 'https://polygonscan.com' },
-  'polygon-mumbai':    { label: 'Polygon Mumbai',     explorer: 'https://mumbai.polygonscan.com' },
-  'opt-mainnet':       { label: 'Optimism',           explorer: 'https://optimistic.etherscan.io' },
-  'opt-sepolia':       { label: 'Optimism Sepolia',   explorer: 'https://sepolia-optimism.etherscan.io' },
-  'opt-goerli':        { label: 'Optimism Goerli',    explorer: 'https://goerli-optimism.etherscan.io' },
-  'arb-mainnet':       { label: 'Arbitrum',           explorer: 'https://arbiscan.io' },
-  'base-mainnet':      { label: 'Base',               explorer: 'https://basescan.org' },
-  'astar-mainnet':     { label: 'Astar',              explorer: 'https://astar.subscan.io',    addressPath: '/account/' },
-  'starknet-mainnet':  { label: 'Starknet',           explorer: 'https://starkscan.co',        addressPath: '/contract/' },
-  'ink-mainnet':       { label: 'Ink',                explorer: 'https://explorer.inkonchain.com' },
-  'avax-mainnet':      { label: 'Avalanche',          explorer: 'https://snowtrace.io' },
-  'berachain-mainnet': { label: 'Berachain',          explorer: 'https://berascan.com' },
-  'apechain-mainnet':  { label: 'ApeChain',           explorer: 'https://apescan.io' },
-  'monad-mainnet':     { label: 'Monad',              explorer: 'https://monadexplorer.com' },
-  'monad-testnet':     { label: 'Monad Testnet',      explorer: 'https://testnet.monadexplorer.com' },
-};
+        // ── Utilities ──
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
-// ── State ─────────────────────────────────────────────
-let ranges = [
-  { min: 5,  max: 10,  inf: false, color: "#f0a030" },
-  { min: 11, max: 20,  inf: false, color: "#9b72cf" },
-  { min: 21, max: 30,  inf: false, color: "#4a9edd" },
-  { min: 31, max: 999, inf: true,  color: "#3dbf90" },
-];
-const PALETTE = ["#f0a030","#9b72cf","#4a9edd","#3dbf90","#e05080","#60b040","#d06040","#4080d0"];
+        const fmtTime = (s) => {
+          if (s < 60) return `${s}s`
+          if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`
+          return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`
+        }
 
-// ── Auto-label from range values ───────────────────────
-function rangeLabel(r) {
-  if (r.inf) return r.min + "+";
-  return r.min + " – " + r.max;
-}
+        const alchemyRpc = (chain) => `https://${chain}.g.alchemy.com/v2/${ALCHEMY_KEY}`
 
-// ── Render range rows ──────────────────────────────────
-function renderEditor() {
-  const el = document.getElementById("rangesEditor");
-  el.innerHTML = "";
-  ranges.forEach(function(r, i) {
-    const row = document.createElement("div");
-    row.className = "range-row";
-    row.innerHTML =
-      '<input type="number" min="0" placeholder="Min" value="' + r.min + '" oninput="updateRange(' + i + ',\'min\',+this.value)" />' +
-      '<span class="sep">to</span>' +
-      '<input type="number" min="0" placeholder="Max" id="maxInp_' + i + '" value="' + (r.inf ? '' : r.max) + '" ' + (r.inf ? 'disabled style="opacity:0.3"' : '') + ' oninput="updateRange(' + i + ',\'max\',+this.value)" />' +
-      '<label class="inf-label"><input type="checkbox" ' + (r.inf ? 'checked' : '') + ' onchange="toggleInf(' + i + ',this.checked)" /> no limit</label>' +
-      '<input type="color" value="' + r.color + '" oninput="updateRange(' + i + ',\'color\',this.value)" />' +
-      '<button class="btn-remove" onclick="removeRange(' + i + ')" title="Remove">×</button>';
-    el.appendChild(row);
-  });
-}
+        // ── Reactive State ──
+        const formState = Vue.reactive({
+          chain: 'eth-mainnet',
+          contractAddr: '',
+          tokenStart: '',
+          tokenEnd: '',
+          userLockedStart: false,
+          userLockedEnd: false
+        })
 
-function updateRange(i, key, val) { ranges[i][key] = val; }
+        const detectState = Vue.reactive({
+          message: '',
+          type: '',
+          detectingStart: false,
+          detectingEnd: false
+        })
 
-function toggleInf(i, checked) {
-  ranges[i].inf = checked;
-  const inp = document.getElementById("maxInp_" + i);
-  inp.disabled = checked;
-  inp.style.opacity = checked ? "0.3" : "1";
-  if (checked) ranges[i].max = 999999;
-}
+        const statusState = Vue.reactive({
+          message: '',
+          type: '',
+          visible: false
+        })
 
-function addRange() {
-  const color = PALETTE[ranges.length % PALETTE.length];
-  const last  = ranges.length ? (ranges[ranges.length-1].inf ? 999999 : ranges[ranges.length-1].max) : 0;
-  ranges.push({ min: last + 1, max: last + 10, inf: false, color });
-  renderEditor();
-}
+        const scanState = Vue.reactive({
+          scanning: false,
+          usingFallback: false,
+          holderMap: {},
+          failedIds: new Set(),
+          logs: [],
+          progressPercent: 0,
+          progressLabel: '\u2014',
+          showProgress: false,
+          showStats: false,
+          showLog: false,
+          showResults: false,
+          failedInfo: '',
+          bucketed: [],
+          shortContract: '',
+          totalHolders: '0',
+          explorerBase: '',
+          explorerAddrPath: '/address/'
+        })
 
-function removeRange(i) { ranges.splice(i, 1); renderEditor(); }
+        const ranges = Vue.ref(DEFAULT_RANGES.map(r => ({ ...r })))
+        const tierOpen = Vue.reactive({})
+        const chainOrder = Object.keys(CHAIN_REGISTRY)
+        let detectTimer = null
+        const logBoxRef = Vue.ref(null)
 
-// ── Status ─────────────────────────────────────────────
-function showStatus(msg, type) {
-  const el = document.getElementById("status");
-  el.textContent = msg;
-  el.className = "status " + type;
-  el.classList.remove("hidden");
-}
-function hideStatus() { document.getElementById("status").classList.add("hidden"); }
+        // ── Computed ──
+        const stats = Vue.computed(() => {
+          const holderValues = Object.values(scanState.holderMap)
+          const unique = new Set(holderValues)
+          const found = Object.keys(scanState.holderMap).length
+          const failed = scanState.failedIds.size
+          return {
+            holders: unique.size.toLocaleString(),
+            supply: found.toLocaleString(),
+            failed: failed.toLocaleString(),
+            progress: (found + failed).toLocaleString()
+          }
+        })
 
-// ── Build active ranges ────────────────────────────────
-function buildRanges() {
-  return ranges.map(function(r) {
-    return { min: +r.min || 0, max: r.inf ? Infinity : (+r.max || 0), color: r.color, inf: r.inf };
-  }).filter(function(r) { return r.min <= r.max || r.max === Infinity; });
-}
+        // ── Log ──
+        const log = (type = 'info', message = '') => {
+          const box = logBoxRef.value
+          const shouldAutoScroll = !box || box.scrollTop + box.clientHeight >= box.scrollHeight - 24
+          scanState.logs.push({
+            time: new Date().toLocaleTimeString(),
+            message,
+            type
+          })
+          if (shouldAutoScroll) {
+            Vue.nextTick(() => { if (logBoxRef.value) logBoxRef.value.scrollTop = logBoxRef.value.scrollHeight })
+          }
+        }
 
-// ── Scan ───────────────────────────────────────────────
-async function startScan() {
-  const apiKey   = "tPWqgHC6-1dU8Y9Wdc-50dRrcc4nhsIh";
-  const contract = document.getElementById("contractAddr").value.trim();
-  if (!contract || !contract.startsWith("0x")) { showStatus("Enter a valid contract address (0x...).", "error"); return; }
-  const active = buildRanges();
-  if (!active.length)                    { showStatus("Define at least one valid range.", "error"); return; }
+        const clearLog = () => { scanState.logs = [] }
 
-  document.getElementById("scanBtn").disabled = true;
-  document.getElementById("results").classList.add("hidden");
-  showStatus("Connecting…", "loading");
+        // ── Status ──
+        const showStatus = (message, type) => {
+          statusState.message = message
+          statusState.type = type
+          statusState.visible = true
+        }
 
-  try {
-    const chain = document.getElementById("chainSelect").value;
-    const ownerMap = await fetchOwners(apiKey, contract, chain);
-    hideStatus();
-    renderResults(ownerMap, active, contract, chain);
-  } catch(e) {
-    showStatus(e.message || "Fetch failed. Check your API key.", "error");
-  } finally {
-    document.getElementById("scanBtn").disabled = false;
-  }
-}
+        const hideStatus = () => {
+          statusState.visible = false
+          statusState.message = ''
+          statusState.type = ''
+        }
 
-// ── Fetch ──────────────────────────────────────────────
-async function fetchOwners(apiKey, contract, chain) {
-  const base = "https://" + chain + ".g.alchemy.com/nft/v3/" + apiKey;
-  let pageKey = null, ownerMap = {}, page = 0;
-  do {
-    page++;
-    showStatus("Fetching page " + page + "…", "loading");
-    const url = new URL(base + "/getOwnersForContract");
-    url.searchParams.set("contractAddress", contract);
-    url.searchParams.set("withTokenBalances", "true");
-    if (pageKey) url.searchParams.set("pageKey", pageKey);
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      let msg = "HTTP " + res.status;
-      try { const j = await res.json(); msg = j.error?.message || msg; } catch(_){}
-      throw new Error(msg);
-    }
-    const data = await res.json();
-    pageKey = data.pageKey || null;
-    for (const o of data.owners || []) {
-      const n = (o.tokenBalances || []).reduce(function(s,t){ return s+(parseInt(t.balance)||0); }, 0);
-      ownerMap[o.ownerAddress] = (ownerMap[o.ownerAddress] || 0) + n;
-    }
-  } while (pageKey);
-  return ownerMap;
-}
+        // ── RPC Layer ──
+        const rpcCall = async (rpc, method, params, timeout = 15000) => {
+          const res = await fetch(rpc, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
+            signal: AbortSignal.timeout(timeout)
+          })
+          const json = await res.json()
+          if (json.error) throw new Error(json.error.message || JSON.stringify(json.error))
+          return json.result
+        }
 
-// ── Render ─────────────────────────────────────────────
-function renderResults(ownerMap, active, contract, chain) {
-  const chainInfo = CHAINS[chain] || CHAINS['eth-mainnet'];
-  const explorerBase = chainInfo.explorer;
-  const explorerAddrPath = chainInfo.addressPath || '/address/';
-  const total = Object.keys(ownerMap).length;
-  const shortContract = contract.slice(0,6) + "…" + contract.slice(-4);
+        const batchOwnerOf = async (rpc, contract, tokenIds) => {
+          const requests = tokenIds.map((tokenId, i) => ({
+            jsonrpc: '2.0',
+            id: i,
+            method: 'eth_call',
+            params: [{ to: contract, data: `${OWNER_OF_SIG}${tokenId.toString(16).padStart(64, '0')}` }, 'latest']
+          }))
+          const res = await fetch(rpc, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requests),
+            signal: AbortSignal.timeout(30000)
+          })
+          const data = await res.json()
+          const entries = Array(data).flat()
+          const errorEntry = entries.find(entry => entry && entry.error)
+          if (errorEntry) {
+            const errorObj = errorEntry.error
+            throw new Error(errorObj.message || JSON.stringify(errorObj))
+          }
+          return data
+        }
 
-  const bucketed = active.map(function(r) {
-    return Object.assign({}, r, {
-      wallets: Object.entries(ownerMap)
-        .filter(function(e){ return e[1] >= r.min && e[1] <= r.max; })
-        .sort(function(a,b){ return b[1]-a[1]; })
-    });
-  });
-  window._bucketed = bucketed;
+        // ── Detection ──
+        const getActiveRpc = (chain) => {
+          const cfg = CHAIN_REGISTRY[chain]
+          return scanState.usingFallback ? alchemyRpc(chain) : cfg.publicRpc || alchemyRpc(chain)
+        }
 
-  let html =
-    '<div class="results-header">' +
-      '<span class="results-title">' + shortContract + '</span>' +
-      '<span class="results-meta">' + total.toLocaleString() + ' unique holders</span>' +
-    '</div>';
+        const detectTokenRange = async (rpcUrl, contract, lockStart, lockEnd) => {
+          let supply = null
+          if (!lockEnd) {
+            try {
+              const result = await rpcCall(rpcUrl, 'eth_call', [{ to: contract, data: TOTAL_SUPPLY_SIG }, 'latest'], 10000)
+              if (result && result !== '0x') {
+                const parsed = parseInt(result, 16)
+                if (parsed > 0 && parsed < 10000000) supply = parsed
+              }
+            } catch (_) { }
+          }
 
-  bucketed.forEach(function(b, i) {
-    const lbl = rangeLabel(b);
-    const wc  = b.wallets.length;
+          let startId = null
+          if (!lockStart) {
+            try {
+              const result = await batchOwnerOf(rpcUrl, contract, [0])
+              if (hasOwner(result[0])) startId = 0
+            } catch (_) { }
 
-    let tableHtml = "";
-    if (wc === 0) {
-      tableHtml = '<div class="empty-tier">No holders in this range</div>';
-    } else {
-      tableHtml = '<div class="wallet-table" style="border-color:' + b.color + '">' +
-        b.wallets.map(function(e) {
-          const addr = e[0], n = e[1];
-          return '<div class="wallet-item" style="color:' + b.color + '">' +
-            '<span class="wallet-addr-text" title="' + addr + '">' + addr + '</span>' +
-            '<div class="wallet-right">' +
-              '<span class="holding-num">' + n + '</span>' +
-              '<button class="ico-btn" onclick="copyText(\'' + addr + '\',this)" title="Copy">⧉</button>' +
-              '<a class="scan-link" href="' + explorerBase + explorerAddrPath + addr + '" target="_blank" title="Explorer">↗</a>' +
-            '</div>' +
-          '</div>';
-        }).join("") +
-      '</div>';
-    }
+            if (startId === null) {
+              try {
+                const result = await batchOwnerOf(rpcUrl, contract, [1])
+                if (hasOwner(result[0])) startId = 1
+              } catch (_) { }
+            }
+          }
 
-    const bodyId = "tbody_" + i;
-    const chevId = "chev_" + i;
+          return { supply, startId }
+        }
 
-    html +=
-      '<div class="tier-block">' +
-        '<div class="tier-top">' +
-          '<span class="tier-name"><span class="tier-dot" style="background:' + b.color + '"></span>' + lbl + ' holders</span>' +
-          '<div class="tier-actions">' +
-            '<span class="count-pill">' + wc + '</span>' +
-            '<button class="btn-copy-tier" onclick="copyBucket(' + i + ',this)">Copy all</button>' +
-            '<button class="btn-toggle" onclick="toggleBody(\'' + bodyId + '\',\'' + chevId + '\')">' +
-              '<i class="chevron-icon" id="' + chevId + '">▼</i>' +
-            '</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="tier-body" id="' + bodyId + '">' + tableHtml + '</div>' +
-      '</div>';
+        const scheduleDetect = () => {
+          clearTimeout(detectTimer)
+          const contract = formState.contractAddr
+          if (!contract || contract.length < 42 || !contract.startsWith('0x')) {
+            detectState.message = ''
+            detectState.type = ''
+            return
+          }
+          detectState.message = 'Detecting token range...'
+          detectState.type = 'spin'
+          detectTimer = setTimeout(runDetect, 700)
+        }
 
-    if (i < bucketed.length - 1) html += '<hr class="divider"/>';
-  });
+        const runDetect = async () => {
+          const chain = formState.chain
+          const rpc = getActiveRpc(chain)
+          const contract = formState.contractAddr
+          if (!rpc || !contract || !contract.startsWith('0x')) return
 
-  const el = document.getElementById("results");
-  el.innerHTML = html;
-  el.classList.remove("hidden");
+          if (formState.userLockedStart && formState.userLockedEnd) {
+            detectState.message = 'Range set manually - clear fields to re-detect'
+            detectState.type = 'err'
+            return
+          }
 
-  // Start all tiers expanded
-  bucketed.forEach(function(_, i) {
-    document.getElementById("tbody_" + i).classList.add("open");
-    document.getElementById("chev_" + i).classList.add("open");
-  });
-}
+          detectState.detectingStart = !formState.userLockedStart
+          detectState.detectingEnd = !formState.userLockedEnd
+          detectState.message = 'Detecting token range...'
+          detectState.type = 'spin'
 
-function toggleBody(bodyId, chevId) {
-  document.getElementById(bodyId).classList.toggle("open");
-  document.getElementById(chevId).classList.toggle("open");
-}
+          try {
+            let detected = await detectTokenRange(rpc, contract, formState.userLockedStart, formState.userLockedEnd)
+            if (!scanState.usingFallback && detected.supply === null && detected.startId === null && CHAIN_REGISTRY[chain].alchemyFallback !== false) {
+              detected = await detectTokenRange(alchemyRpc(chain), contract, formState.userLockedStart, formState.userLockedEnd)
+            }
 
-function copyBucket(i, btn) {
-  const text = window._bucketed[i].wallets.map(function(e){ return e[0]; }).join("\n");
-  navigator.clipboard.writeText(text).then(function() {
-    const orig = btn.textContent;
-    btn.textContent = "Copied!";
-    setTimeout(function(){ btn.textContent = orig; }, 2000);
-  });
-}
+            const endVal = (!formState.userLockedEnd && detected.supply !== null)
+              ? (detected.startId === 0 ? detected.supply - 1 : detected.supply)
+              : null
 
-function copyText(text, btn) {
-  navigator.clipboard.writeText(text).then(function() {
-    const orig = btn.textContent;
-    btn.textContent = "✓";
-    setTimeout(function(){ btn.textContent = orig; }, 1500);
-  });
-}
+            const parts = [
+              formatField('Start', formState.userLockedStart, formState.tokenStart, detected.startId,
+                v => { formState.tokenStart = String(v) }),
+              formatField('End', formState.userLockedEnd, formState.tokenEnd, endVal,
+                v => { formState.tokenEnd = String(v) })
+            ]
 
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Enter" && (e.target.id === "apiKey" || e.target.id === "contractAddr")) startScan();
-});
+            const success = (!formState.userLockedStart && detected.startId !== null) || (!formState.userLockedEnd && detected.supply !== null)
+            detectState.message = `${success ? 'OK ' : 'WARN '}${parts.join('  \u00b7  ')}`
+            detectState.type = success ? 'ok' : 'err'
+          } catch (e) {
+            detectState.message = `Detection failed: ${String(e.message || '').slice(0, 60)}`
+            detectState.type = 'err'
+          } finally {
+            detectState.detectingStart = false
+            detectState.detectingEnd = false
+          }
+        }
 
-renderEditor();
-</script>
+        // ── Scanning ──
+        const scanTokenIds = async (chain, contract, tokenIds, concurrency, batchSize, scanDelayMs, hooks) => {
+          const total = tokenIds.length
+          let done = 0
+          let idx = 0
+          const t0 = Date.now()
+
+          const worker = async () => {
+            while (idx < tokenIds.length && !hooks.shouldStop()) {
+              const batch = tokenIds.slice(idx, idx + batchSize)
+              idx += batch.length
+
+              const results = await fetchBatchWithRetry(chain, contract, batch, hooks)
+              if (results) hooks.onBatchResults(batch, results)
+              else hooks.onBatchFailed(batch)
+
+              done += batch.length
+              hooks.onProgress(done, total, t0)
+
+              if (scanDelayMs > 0 && idx < tokenIds.length && !hooks.shouldStop()) {
+                await sleep(scanDelayMs)
+              }
+            }
+          }
+
+          await Promise.all(Array.from({ length: concurrency }, () => worker()))
+        }
+
+        const startScan = async () => {
+          if (scanState.scanning) return
+          scanState.scanning = true
+          hideStatus()
+
+          const contract = formState.contractAddr
+          if (!contract || !/^0x[0-9a-fA-F]{40}$/.test(contract)) {
+            showStatus('Enter a valid contract address (0x followed by 40 hex characters).', 'error')
+            scanState.scanning = false
+            return
+          }
+
+          const active = ranges.value
+            .map(r => ({ min: +r.min || 0, max: r.noLimit ? Infinity : (+r.max || 0), color: r.color, noLimit: r.noLimit }))
+          if (!active.length) {
+            showStatus('Define at least one valid range.', 'error')
+            scanState.scanning = false
+            return
+          }
+
+          const tokenStart = parseInt(formState.tokenStart, 10)
+          const tokenEnd = parseInt(formState.tokenEnd, 10)
+          if (isNaN(tokenStart) || isNaN(tokenEnd)) {
+            showStatus('Token range not detected yet. Enter values manually or wait for auto-detect.', 'error')
+            scanState.scanning = false
+            return
+          }
+
+          if (tokenEnd < tokenStart) {
+            showStatus('Token end must be greater than or equal to token start.', 'error')
+            scanState.scanning = false
+            return
+          }
+
+          const chainCfg = CHAIN_REGISTRY[formState.chain]
+          const concurrency = chainCfg.concurrency || 10
+          const batchSz = chainCfg.batchSize || 20
+          const scanDelayMs = chainCfg.scanDelayMs || 0
+
+          scanState.holderMap = {}
+          scanState.failedIds = new Set()
+          scanState.logs = []
+          scanState.usingFallback = !chainCfg.publicRpc
+          scanState.progressPercent = 0
+          scanState.progressLabel = '\u2014'
+          scanState.failedInfo = ''
+          scanState.bucketed = []
+          scanState.showProgress = true
+          scanState.showStats = true
+          scanState.showLog = true
+          scanState.showResults = false
+
+          const activeRpc = getActiveRpc(formState.chain)
+          log('info', `Contract   : ${contract}`)
+          log('info', `Chain      : ${chainCfg.label}`)
+          log('info', `RPC        : ${activeRpc}${scanState.usingFallback ? ' (Alchemy)' : ' (public)'}`)
+          log('info', 'Method     : ownerOf(tokenId) - immune to log limits')
+          log('info', `Token range: ${tokenStart} -> ${tokenEnd} (${(tokenEnd - tokenStart + 1).toLocaleString()} tokens)`)
+          log('info', `Batch size : ${batchSz} per request \u00b7 ${concurrency} parallel workers`)
+          if (scanDelayMs > 0) {
+            log('info', `Delay      : ${scanDelayMs}ms between batches`)
+          }
+
+          const allIds = Array.from({ length: tokenEnd - tokenStart + 1 }, (_, i) => tokenStart + i)
+
+          try {
+            await scanTokenIds(formState.chain, contract.toLowerCase(), allIds, concurrency, batchSz, scanDelayMs, {
+              shouldStop: () => false,
+              getActiveRpc,
+              isUsingFallback: () => scanState.usingFallback,
+              setUsingFallback: (v) => { scanState.usingFallback = v },
+              log,
+              onBatchFailed: (batch) => {
+                batch.forEach(id => scanState.failedIds.add(id))
+                log('error', `Batch ${batch[0]}-${batch[batch.length - 1]}: failed after 5 retries`)
+              },
+              onBatchResults: (batch, results) => {
+                let found = 0
+                for (let i = 0; i < results.length; i++) {
+                  const tokenId = batch[i]
+                  const entry = results[i]
+                  if (!entry || entry.error || !entry.result || entry.result === '0x') {
+                    scanState.failedIds.add(tokenId)
+                    continue
+                  }
+                  const owner = decodeOwner(entry.result)
+                  if (owner && owner !== ZERO_ADDR) {
+                    scanState.holderMap[tokenId] = owner
+                    found++
+                  } else {
+                    scanState.failedIds.add(tokenId)
+                  }
+                }
+                if (found > 0) log('ok', `Token IDs ${batch[0]}-${batch[batch.length - 1]}: ${found} owners found`)
+              },
+              onProgress
+            })
+
+            const ownerMap = {}
+            Object.keys(scanState.holderMap).forEach(tokenId => {
+              const owner = scanState.holderMap[tokenId]
+              ownerMap[owner] = (ownerMap[owner] || 0) + 1
+            })
+
+            const holderSet = new Set(Object.values(scanState.holderMap))
+            log('ok', `Done. ${holderSet.size} unique holders \u00b7 ${Object.keys(scanState.holderMap).length} tokens \u00b7 ${scanState.failedIds.size} not found/burned`)
+
+            if (scanState.failedIds.size > 0) {
+              scanState.failedInfo = `${scanState.failedIds.size} token IDs returned no owner (not yet minted, burned, or RPC error): ${[...scanState.failedIds].join(', ')}`
+            }
+
+            scanState.explorerBase = chainCfg.explorer
+            scanState.explorerAddrPath = chainCfg.addressPath || '/address/'
+            scanState.shortContract = `${contract.slice(0, 6)}...${contract.slice(-4)}`
+            scanState.totalHolders = Object.keys(ownerMap).length.toLocaleString()
+            scanState.bucketed = active.map(range => {
+              const wallets = Object.entries(ownerMap)
+                .filter(([_, count]) => count >= range.min && count <= range.max)
+                .sort((a, b) => b[1] - a[1])
+                .map(([address, count]) => ({ address, count }))
+              return { ...range, wallets }
+            })
+
+            scanState.bucketed.forEach((_, idx) => { tierOpen[idx] = true })
+            scanState.showResults = true
+          } catch (e) {
+            showStatus(String(e.message || 'Scan failed.'), 'error')
+            log('error', `ERROR: ${String(e.message || 'Scan failed.')}`)
+          } finally {
+            scanState.scanning = false
+          }
+        }
+
+        // ── Supporting Helpers ──
+        const decodeOwner = (hexResult) => {
+          if (!hexResult || hexResult === '0x' || hexResult.length < 66) return null
+          return `0x${hexResult.slice(-40).toLowerCase()}`
+        }
+
+        const hasOwner = (resp) => {
+          const owner = resp && !resp.error ? decodeOwner(resp.result) : null
+          return owner && owner !== ZERO_ADDR
+        }
+
+        const formatField = (name, locked, manualValue, detected, setValue) => {
+          if (locked) return `${name}: ${manualValue} (manual)`
+          if (detected !== null) {
+            setValue(detected)
+            return `${name}: ${detected}`
+          }
+          return `${name}: unknown`
+        }
+
+        const onProgress = (done, total, t0) => {
+          const pct = Math.round((done / total) * 100)
+          const elapsed = (Date.now() - t0) / 1000
+          const rate = done / Math.max(elapsed, 0.1)
+          const eta = rate > 0 ? Math.round((total - done) / rate) : null
+          const etaText = eta !== null ? ` \u00b7 ~${fmtTime(eta)} remaining` : ''
+          scanState.progressPercent = pct
+          scanState.progressLabel = `${pct}% \u00b7 ${done.toLocaleString()}/${total.toLocaleString()} tokens queried${etaText}`
+        }
+
+        const fetchBatchWithRetry = async (chain, contract, batch, hooks) => {
+          for (let attempt = 0; attempt < 5; attempt++) {
+            try {
+              return await batchOwnerOf(hooks.getActiveRpc(chain), contract, batch)
+            } catch (e) {
+              if (!hooks.isUsingFallback() && attempt === 0 && CHAIN_REGISTRY[chain].alchemyFallback !== false) {
+                hooks.setUsingFallback(true)
+                hooks.log('warning', 'Public RPC failed, switching to Alchemy fallback...')
+                try {
+                  return await batchOwnerOf(alchemyRpc(chain), contract, batch)
+                } catch (_) { }
+              }
+
+              if (attempt < 4) {
+                hooks.log('warning', `Batch ${batch[0]}-${batch[batch.length - 1]}: retry ${attempt + 1}/4 (${String(e.message || '').slice(0, 45)})`)
+                await sleep(RETRY_DELAYS_MS[attempt])
+              }
+            }
+          }
+
+          return null
+        }
+
+        // ── UI Helpers ──
+        const rangeLabel = (r) => r.noLimit ? `${r.min}+` : `${r.min} - ${r.max}`
+
+        const addRange = () => {
+          const color = PALETTE[ranges.value.length % PALETTE.length]
+          const last = ranges.value.length ? ranges.value[ranges.value.length - 1].max || 0 : 0
+          ranges.value.push({ min: last + 1, max: last + 10, noLimit: false, color })
+        }
+
+        const removeRange = (index) => { ranges.value.splice(index, 1) }
+
+        const toggleNoLimit = (index, checked) => { ranges.value[index].noLimit = checked }
+
+        const onContractInput = () => scheduleDetect()
+
+        const onTokenStartInput = () => {
+          formState.userLockedStart = String(formState.tokenStart).trim() !== ''
+          if (!formState.userLockedStart) scheduleDetect()
+        }
+
+        const onTokenEndInput = () => {
+          formState.userLockedEnd = String(formState.tokenEnd).trim() !== ''
+          if (!formState.userLockedEnd) scheduleDetect()
+        }
+
+        const onChainChange = () => {
+          scanState.usingFallback = !CHAIN_REGISTRY[formState.chain].publicRpc
+          scheduleDetect()
+        }
+
+        const toggleBody = (index) => { tierOpen[index] = !tierOpen[index] }
+
+        const isTierOpen = (index) => tierOpen[index] !== false
+
+        const copyBucket = async (index, event) => {
+          const bucket = scanState.bucketed[index]
+          const text = bucket.wallets.map(w => `${w.address},${w.count}`).join('\n')
+          const btn = event.target
+          const original = btn.textContent
+          try {
+            await navigator.clipboard.writeText(text)
+            btn.textContent = 'Copied!'
+          } catch {
+            btn.textContent = 'Failed'
+          }
+          await sleep(2000)
+          btn.textContent = original
+        }
+
+        const copyText = async (address, count, event) => {
+          const btn = event.target
+          const original = btn.textContent
+          try {
+            await navigator.clipboard.writeText(`${address},${count}`)
+            btn.textContent = '\u2713'
+          } catch {
+            btn.textContent = '\u2717'
+          }
+          await sleep(1500)
+          btn.textContent = original
+        }
+
+        // ── Lifecycle ──
+        onChainChange()
+
+        return {
+          CHAIN_REGISTRY, chainOrder,
+          formState, detectState, statusState, scanState,
+          ranges, logBoxRef, stats,
+          rangeLabel,
+          onChainChange, onContractInput, onTokenStartInput, onTokenEndInput,
+          addRange, removeRange, toggleNoLimit,
+          startScan, clearLog,
+          toggleBody, isTierOpen,
+          copyBucket, copyText
+        }
+      }
+    })
+
+    app.mount('#app')
+  </script>
 </body>
+
 </html>
