@@ -1049,12 +1049,19 @@
           })
           const data = await res.json()
           const entries = Array(data).flat()
-          const errorEntry = entries.find(entry => entry && entry.error)
-          if (errorEntry) {
-            const errorObj = errorEntry.error
-            throw new Error(errorObj.message || JSON.stringify(errorObj))
+          const errors = entries.filter(entry => entry && entry.error)
+          if (errors.length > 0) {
+            const hasTransientError = errors.some(entry => {
+              const code = entry.error.code
+              const msg = (entry.error.message || '').toLowerCase()
+              const isRevert = code === 3 || msg.includes('revert')
+              return !isRevert
+            })
+            if (hasTransientError) {
+              throw new Error(errors[0].error.message || JSON.stringify(errors[0].error))
+            }
           }
-          return data
+          return entries
         }
 
         // ── Detection ──
