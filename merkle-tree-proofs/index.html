@@ -6,44 +6,264 @@
     <title>Merkle Root Generator and Proof Verifier</title>
     <script src="ethers.5.0.0.umd.js"></script>
     <script src="merkletree.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #f9f9f8;
+        color: #242424;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        min-height: 100vh;
+        padding: 56px 20px 80px;
+      }
+
+      .page {
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+      }
+
+      h2 {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0 0 8px;
+      }
+
+      p {
+        margin: 0;
+        color: #4f4f4d;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .subtitle {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 28px;
+      }
+
+      .intro {
+        background: #fff;
+        border: 1px solid #e8e8e6;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 22px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .intro img {
+        width: 100%;
+        max-width: 620px;
+        border: 1px solid #ececea;
+        border-radius: 8px;
+        display: block;
+      }
+
+      .meta-row {
+        display: grid;
+        gap: 4px;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .panel {
+        background: #fff;
+        border: 1px solid #e8e8e6;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 8px;
+      }
+
+      textarea,
+      input[type="text"] {
+        width: 100%;
+        border: 1px solid #e0e0de;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-family: inherit;
+        font-size: 13px;
+        color: #242424;
+        background: #fff;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 170px;
+      }
+
+      textarea:focus,
+      input[type="text"]:focus {
+        border-color: #aaa;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      button {
+        background: #242424;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+      }
+
+      button:hover {
+        background: #242424;
+      }
+
+      button:active {
+        transform: scale(0.99);
+      }
+
+      .output {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #ededeb;
+        background: #fcfcfb;
+        color: #333;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        min-height: 39px;
+        overflow-wrap: anywhere;
+      }
+
+      #proofResult {
+        max-height: 180px;
+        overflow: auto;
+      }
+
+      #sticky-link {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        padding: 5px;
+        border-radius: 5px;
+        text-decoration: underline;
+        color: #242424;
+        font-size: 14px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #ececea;
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 52px 14px 56px;
+        }
+
+        h1 {
+          font-size: 20px;
+        }
+
+        .panel,
+        .intro {
+          padding: 14px;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
   </head>
   <body>
-    <h1 id="merkle-proof-verifier">Merkle Proof Verifier</h1>
-    <p>
-      <a href="https://webtools.scatter.art/">https://webtools.scatter.art/</a>
-    </p>
-    <p>This tool is primarily for verifying Merkle roots used by collection contracts published through <a href="https://www.scatter.art/">https://www.scatter.art/</a>
-    </p>
-    <p>Use this tool to verify that Merkle roots are proper. Use the same list that was used to generate and you should get the same root.</p>
-    <p>You can also use this tool to verify that an address is contained within a Merkle root. For example, you can look up Merkle roots for lists on a collection&#39;s Etherscan page and check to make sure your address is in that list.</p>
-	<p>None affiliate: 0x</p>
-	<p>None signature: 0x0000000000000000000000000000000000000000</p>
+    <a id="sticky-link" href="https://webtools.scatter.art/">Scatter Partners Webtools</a>
 
-    <p>
-      <img src="https://user-images.githubusercontent.com/94951726/231622294-a43ccf23-e4c8-4514-818d-d375e38133d5.png" alt="scatter_root_example">
-    </p>
-    <h1>Merkle Root Generator</h1>
-    <p>Enter Ethereum wallet addresses (one per line):</p>
-    <textarea id="addresses" rows="10" cols="50"></textarea>
-    <br>
-    <button onclick="generateMerkleRoot()">Generate Merkle Root</button>
-    <h2>Merkle Root:</h2>
-    <p id="result"></p>
-    <h2>Verify Merkle Root</h2>
-    <p>Enter Merkle Root:</p>
-    <input type="text" id="inputMerkleRoot" size="70">
-    <p>Enter Address:</p>
-    <input type="text" id="inputAddress" size="50">
-    <br>
-    <button onclick="verifyMerkleRoot()">Verify Merkle Root</button>
-    <p id="verificationResult"></p>
-    <h2>Generate Proof</h2>
-    <p>Enter Address for Proof:</p>
-    <input type="text" id="proofAddress" size="50">
-    <br>
-    <button onclick="generateProof()">Generate Proof</button>
-    <button onclick="copyProof()">Copy Proof to Clipboard</button>
-    <p id="proofResult" style="max-width: 600px; overflow: scroll;"></p>
+    <main class="page">
+      <h1 id="merkle-proof-verifier">Merkle Proof Verifier</h1>
+      <p class="subtitle">Verify list roots and proof membership for Scatter contract snapshots.</p>
+
+      <section class="intro">
+        <p>This tool is primarily for verifying Merkle roots used by collection contracts published through <a href="https://www.scatter.art/">scatter.art</a>.</p>
+        <p>Use the same address list that generated a root to validate it. You can also verify if an address is included in a specific root.</p>
+        <div class="meta-row">
+          <span>None affiliate: 0x</span>
+          <span>None signature: 0x0000000000000000000000000000000000000000</span>
+        </div>
+        <img src="https://user-images.githubusercontent.com/94951726/231622294-a43ccf23-e4c8-4514-818d-d375e38133d5.png" alt="scatter_root_example">
+      </section>
+
+      <section class="panel">
+        <h2>Merkle Root Generator</h2>
+        <label for="addresses">Ethereum Wallet Addresses (one per line)</label>
+        <textarea id="addresses" rows="10" cols="50"></textarea>
+        <div class="actions">
+          <button onclick="generateMerkleRoot()">Generate Merkle Root</button>
+        </div>
+        <label for="result" style="margin-top: 12px;">Merkle Root</label>
+        <p id="result" class="output"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Verify Merkle Root</h2>
+        <label for="inputMerkleRoot">Merkle Root</label>
+        <input type="text" id="inputMerkleRoot" size="70">
+        <label for="inputAddress" style="margin-top: 12px;">Address</label>
+        <input type="text" id="inputAddress" size="50">
+        <div class="actions">
+          <button onclick="verifyMerkleRoot()">Verify Merkle Root</button>
+        </div>
+        <p id="verificationResult" class="output"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Generate Proof</h2>
+        <label for="proofAddress">Address for Proof</label>
+        <input type="text" id="proofAddress" size="50">
+        <div class="actions">
+          <button onclick="generateProof()">Generate Proof</button>
+          <button onclick="copyProof()">Copy Proof to Clipboard</button>
+        </div>
+        <p id="proofResult" class="output"></p>
+      </section>
+    </main>
     <script>
       const provider = new ethers.providers.getDefaultProvider();
 
