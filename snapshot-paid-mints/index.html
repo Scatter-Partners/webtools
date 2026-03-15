@@ -2,80 +2,187 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ethereum Mint Analyzer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Updated ethers.js CDN link -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
   <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: 'Roboto', sans-serif;
-      padding: 20px;
+      background: #f9f9f8;
+      color: #242424;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 60px 20px 72px;
     }
+
+    .page {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
     h1 {
-      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      color: #242424;
     }
+
+    .subtitle {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+
     #input-container {
-      margin-bottom: 20px;
-      margin: auto;
-      width: 70%;
-      max-width: 960px;
+      margin: 0;
+      width: 100%;
     }
+
     #input-container label {
       display: block;
-      margin-bottom: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
     }
+
     #input-container input {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
+      border: 1px solid #e0e0de;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 18px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #242424;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: textfield;
     }
+
+    #input-container input:focus {
+      border-color: #aaa;
+    }
+
+    #input-container input::placeholder {
+      color: #bbb;
+    }
+
     #analyze-button {
-      padding: 10px;
       width: 100%;
-      background-color: #007bff;
-      color: white;
+      background: #242424;
+      color: #fff;
       border: none;
+      border-radius: 6px;
+      padding: 13px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
     }
+
+    #analyze-button:hover:not([disabled]) {
+      background: #242424;
+    }
+
+    #analyze-button:active:not([disabled]) {
+      transform: scale(0.99);
+    }
+
     #analyze-button[disabled] {
-      background-color: #ccc;
+      background: #ccc;
+      cursor: not-allowed;
     }
+
+    .note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+
     #status {
       margin-top: 20px;
-      font-weight: bold;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #f4f4f2;
+      color: #888;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
     }
+
     #sticky-link {
       position: fixed;
       top: 10px;
       left: 10px;
-      background-color: white;
       padding: 5px;
       border-radius: 5px;
       text-decoration: underline;
-      color: #ff3d00;
+      color: #242424;
+      font-size: 14px;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 52px 14px 48px;
+      }
+
+      h1 {
+        font-size: 18px;
+      }
+
+      .subtitle {
+        margin-bottom: 24px;
+      }
+
+      #input-container input {
+        margin-bottom: 14px;
+      }
     }
   </style>
 </head>
 <body>
   <a id="sticky-link" href="https://webtools.scatter.art">Scatter Partners Webtools</a>
 
-  <h1>Ethereum Mint Analyzer</h1>
-  <div id="input-container">
-    <label for="contract-address">Contract Address:</label>
-    <input type="text" id="contract-address" placeholder="Enter Ethereum Contract Address">
+  <div class="page">
+    <h1>Ethereum Mint Analyzer</h1>
+    <p class="subtitle">Review paid mint activity from Transfer events and export wallet totals as CSV.</p>
+    <div id="input-container">
+      <label for="contract-address">Contract Address</label>
+      <input type="text" id="contract-address" placeholder="Enter Ethereum contract address">
 
-    <label for="deployment-block">Starting Block Number (optional):</label>
-    <input type="text" id="deployment-block" placeholder="Optional - enter if known">
+      <label for="deployment-block">Starting Block Number (Optional)</label>
+      <input type="text" id="deployment-block" placeholder="Optional - enter if known">
 
-    <label for="required-amount">Required Min Amount Per Mint (ETH):</label>
-    <input type="text" id="required-amount" placeholder="Optional">
+      <label for="required-amount">Required Min Amount Per Mint (ETH)</label>
+      <input type="text" id="required-amount" placeholder="Optional">
 
-    <button id="analyze-button">Analyze Mints</button>
-  
-    <p>This is meant for Scatter contracts, but may work with others. Use at your own risk! Verify results manually!</p>
-	
-	
-	<div id="status"></div>
+      <button id="analyze-button">Analyze Mints</button>
+
+      <p class="note">This is meant for Scatter contracts, but may work with others. Use at your own risk and verify results manually.</p>
+
+      <div id="status"></div>
+    </div>
   </div>
 
   
