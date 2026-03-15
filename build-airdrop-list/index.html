@@ -2,100 +2,266 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Airdrop List Builder - For Collection Migrations</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
   <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Roboto', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
+      margin: 0;
+      background: #f9f9f8;
+      color: #242424;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 64px 20px 72px;
     }
-    #title {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
+
+    .page {
+      max-width: 620px;
+      margin: 0 auto;
     }
-    #text-container, #counter-container, #checkbox-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 6px 0 28px;
+      color: #888;
+      font-size: 13px;
+    }
+
+    .info-card,
+    .result-card {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .info-card {
+      margin-bottom: 24px;
+      color: #4b4b4b;
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    .info-card p {
+      margin: 0 0 8px;
+    }
+
+    .info-card p:last-child {
+      margin-bottom: 0;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field:last-of-type {
       margin-bottom: 20px;
     }
-    #input-label, #counter-label, #checkbox-label {
-      font-weight: bold;
+
+    label,
+    .result-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #8a8a8a;
+      margin-bottom: 8px;
     }
-    #collection-address-input, #starts-at-zero {
-      margin-top: 10px;
-      padding: 5px;
-      width: 350px;
-      border: 1px solid #bbb;
-      border-radius: 5px;
+
+    #collection-address-input {
+      width: 100%;
+      border: 1px solid #e0e0de;
+      border-radius: 6px;
+      padding: 11px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #242424;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
     }
-    #snapshot-button {
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      color: white;
-      background-color: #007bff;
+
+    #collection-address-input:focus {
+      border-color: #aaa;
+    }
+
+    #collection-address-input::placeholder {
+      color: #b9b9b9;
+    }
+
+    #checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    #starts-at-zero {
+      width: 14px;
+      height: 14px;
+      accent-color: #242424;
+      margin: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #checkbox-container label {
+      margin: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
       cursor: pointer;
     }
+
+    #snapshot-button {
+      width: 100%;
+      padding: 13px;
+      border-radius: 6px;
+      border: none;
+      color: white;
+      background: #242424;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    #snapshot-button:hover:not([disabled]) {
+      background: #242424;
+    }
+
+    #snapshot-button:active:not([disabled]) {
+      transform: scale(0.99);
+    }
+
     #snapshot-button[disabled] {
-      background-color: #ccc;
+      background: #ccc;
+      cursor: not-allowed;
     }
+
+    .results {
+      margin-top: 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    #counter-display {
+      color: #242424;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
     #log-box {
-      margin-top: 20px;
-      padding: 5px;
-      width: 350px;
-      height: 200px;
-      border: 1px solid #bbb;
-      border-radius: 5px;
-      overflow: auto;
+      display: block;
+      width: 100%;
+      height: 230px;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      color: #444;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.65;
+      resize: vertical;
+      overflow-y: auto;
       white-space: pre-wrap;
+      outline: none;
     }
-  </style>
-  <style>
+
+    #log-box::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #log-box::-webkit-scrollbar-thumb {
+      background: #e0e0de;
+      border-radius: 4px;
+    }
+
     #sticky-link {
       position: fixed;
       top: 10px;
       left: 10px;
-      background-color: white;
       padding: 5px;
       border-radius: 5px;
       text-decoration: underline;
-      color: #ff3d00;
+      color: #242424;
+      font-size: 14px;
     }
-  </style>    
+
+    @media (max-width: 640px) {
+      body {
+        padding: 58px 14px 40px;
+      }
+
+      .info-card,
+      .result-card {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+    }
+  </style>
 </head>
 <body>
   <a id="sticky-link" href="../">Scatter Partners Webtools</a>
-  <br>
-  <div id="title">Airdrop List Builder</div>
-  <center>
-    <span><br>Requires a wallet like Metamask to be installed.<br>Owner type can either be Wallet or Contract.<br>Delete the first row and third column before using on Scatter.<br>Requires ERC-721s with ownerOf and totalSupply read methods.<br>As Scatter starts at 1 and not 0, if you are migrating from a 0 based contract all IDs will be +1d.<br>Else you need put the first ID last and airdrop the owner of the first ID last.<br>Use at your own risk. Sanity check results.<br>If nothing outputs, check the console for an error.<br>If there are gaps in your original minting where some IDs were never minted, don't rely on this tool.<br>The way airdrops lists work is if you own ID 1, I own ID 2 and 3, and you own ID 4 the list needs to be like:<br>
-you, 1<br>
-me, 2<br>
-you, 1<br>
-Then in batchMintTo tab when this list is used we get the same IDs in the new collection when starting from no IDs minted yet.</span>
-  </center>
-  <br>
-  <div id="text-container">
-    <label id="input-label" for="collection-address-input">Collection Address:</label>
-    <input id="collection-address-input" type="text" placeholder="Enter Collection Address">
-  </div>
-  <div id="checkbox-container">
-    <input type="checkbox" id="starts-at-zero" name="starts-at-zero">
-    <label for="starts-at-zero">IDs start at 0</label>
-  </div>
-  <button id="snapshot-button">Build Airdrop List</button>
-  <br>
-  <div id="counter-container">
-    <label id="counter-label">Tokens Processed:</label>
-    <div id="counter-display">0</div>
-  </div>
-  <textarea id="log-box" readonly></textarea>
+  <main class="page">
+    <h1>Airdrop List Builder</h1>
+    <p class="subtitle">Build CSV output for collection migrations using on-chain owner data.</p>
+
+    <section class="info-card" aria-label="Instructions">
+      <p>Requires a wallet like Metamask to be installed. Owner type can either be Wallet or Contract. Delete the first row and third column before using on Scatter.</p>
+      <p>Requires ERC-721 contracts with <code>ownerOf</code> and <code>totalSupply</code> read methods. If your source contract starts at token ID 0, enable the toggle so IDs are shifted correctly for Scatter.</p>
+      <p>Use at your own risk and sanity-check results. If nothing outputs, check the browser console. If there are gaps in minting where some IDs were never minted, do not rely on this tool.</p>
+      <p>Expected sequence example: if owners are you(1), me(2,3), you(4), the list should read <code>you,1</code> then <code>me,2</code> then <code>you,1</code> so migrated IDs remain aligned.</p>
+    </section>
+
+    <div class="field">
+      <label id="input-label" for="collection-address-input">Collection Address</label>
+      <input id="collection-address-input" type="text" placeholder="Enter collection address">
+    </div>
+
+    <div id="checkbox-container">
+      <input type="checkbox" id="starts-at-zero" name="starts-at-zero">
+      <label for="starts-at-zero">IDs start at 0</label>
+    </div>
+
+    <button id="snapshot-button">Build Airdrop List</button>
+
+    <section class="results" aria-live="polite">
+      <div class="result-card" id="counter-container">
+        <span class="result-label">Progress</span>
+        <div id="counter-display">Tokens Processed: 0</div>
+      </div>
+
+      <div class="result-card">
+        <span class="result-label">Activity Log</span>
+        <textarea id="log-box" readonly></textarea>
+      </div>
+    </section>
+  </main>
 
   <script>
     let airDropList = [];

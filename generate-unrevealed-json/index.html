@@ -5,76 +5,218 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generate Unrevealed JSONs</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
         body {
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
+            margin: 0;
+            background: #f9f9f8;
+            color: #242424;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            padding: 60px 20px 80px;
+        }
+        .page {
+            max-width: 620px;
+            margin: 0 auto;
         }
         #title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            text-align: left;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 13px;
+            margin: 0 0 32px;
+            line-height: 1.5;
         }
         #input_zone {
-            text-align: center;
-            margin-bottom: 20px;
+            background: #fff;
+            border: 1px solid #e8e8e6;
+            border-radius: 10px;
+            padding: 20px;
         }
-        #input_zone input, #input_zone label, #input_zone textarea {
-            margin: 5px;
+        .field {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .field--stack {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        #input_zone label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #888;
+        }
+        #input_zone input[type="text"],
+        #input_zone input[type="number"],
+        #input_zone textarea {
+            width: 100%;
+            border: 1px solid #e0e0de;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #242424;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.15s;
+            appearance: textfield;
+        }
+        #input_zone input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        #input_zone input[type="number"]::-webkit-inner-spin-button {
+            display: none;
+        }
+        #input_zone input:focus,
+        #input_zone textarea:focus {
+            border-color: #aaa;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 36px;
+        }
+        #include-id {
+            width: 16px;
+            height: 16px;
+            accent-color: #242424;
+            cursor: pointer;
         }
         #sticky-link {
             position: fixed;
             top: 10px;
             left: 10px;
-            background-color: white;
             padding: 5px;
             border-radius: 5px;
             text-decoration: underline;
-            color: #ff3d00;
+            color: #242424;
+            font-size: 14px;
         }
         #progress {
-            color: blue;
+            margin: 14px 0 0;
+            color: #888;
+            font-size: 13px;
+            min-height: 20px;
         }
         #json-preview {
             width: 100%;
-            max-width: 600px;
-            height: 200px;
-            font-family: monospace;
-            padding: 10px;
-            box-sizing: border-box;
+            min-height: 220px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        #generate-button {
+            width: 100%;
+            background: #242424;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 13px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s, transform 0.1s;
+            letter-spacing: 0.01em;
+        }
+        #generate-button:hover:not(:disabled) {
+            background: #242424;
+        }
+        #generate-button:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+        #generate-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        @media (max-width: 640px) {
+            body {
+                padding: 54px 14px 56px;
+            }
+            #input_zone {
+                padding: 16px;
+            }
+            .field {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-bottom: 14px;
+            }
+            #json-preview {
+                min-height: 180px;
+            }
         }
     </style>
 </head>
 <body>
     <a id="sticky-link" href="../">Scatter Partners Webtools</a>
-    <div id="title">Generate Unrevealed JSONs</div>
-    <div id="input_zone">
-        <label for="protocol">Protocol:</label>
-        <input type="text" id="protocol" value="ipfs://"><br>
-        <label for="cid">CID / Domain:</label>
-        <input type="text" id="cid"><br>
-        <label for="image-filename">Image Filename (optional):</label>
-        <input type="text" id="image-filename"><br>
-        <label for="start-id">Start ID:</label>
-        <input type="number" id="start-id"><br>
-        <label for="end-id">End ID:</label>
-        <input type="number" id="end-id"><br>
-        <label for="name-prefix">Name Prefix:</label>
-        <input type="text" id="name-prefix"><br>
-        <label for="include-id">Include ID in Name:</label>
-        <input type="checkbox" id="include-id"><br>
-        <label for="description">Description:</label>
-        <input type="text" id="description"><br>
-        <label for="external-url">External URL (optional):</label>
-        <input type="text" id="external-url"><br>
-        <label for="json-preview">Preview of First JSON:</label><br>
-        <textarea id="json-preview" readonly rows="15" cols="70"></textarea><br>
-        <button id="generate-button" onclick="generateUnrevealedJSONs()">Generate and Download JSONs (.zip)</button>
-        <p id="progress"></p>
+    <div class="page">
+        <div id="title">Generate Unrevealed JSONs</div>
+        <p class="subtitle">Create a batch of unrevealed metadata files, preview the first JSON, then download all as a zip.</p>
+        <div id="input_zone">
+            <div class="field">
+                <label for="protocol">Protocol</label>
+                <input type="text" id="protocol" value="ipfs://">
+            </div>
+            <div class="field">
+                <label for="cid">CID / Domain</label>
+                <input type="text" id="cid">
+            </div>
+            <div class="field">
+                <label for="image-filename">Image Filename (optional)</label>
+                <input type="text" id="image-filename">
+            </div>
+            <div class="field">
+                <label for="start-id">Start ID</label>
+                <input type="number" id="start-id">
+            </div>
+            <div class="field">
+                <label for="end-id">End ID</label>
+                <input type="number" id="end-id">
+            </div>
+            <div class="field">
+                <label for="name-prefix">Name Prefix</label>
+                <input type="text" id="name-prefix">
+            </div>
+            <div class="field">
+                <label for="include-id">Include ID in Name</label>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="include-id">
+                </div>
+            </div>
+            <div class="field">
+                <label for="description">Description</label>
+                <input type="text" id="description">
+            </div>
+            <div class="field">
+                <label for="external-url">External URL (optional)</label>
+                <input type="text" id="external-url">
+            </div>
+            <div class="field field--stack">
+                <label for="json-preview">Preview of First JSON</label>
+                <textarea id="json-preview" readonly rows="15" cols="70"></textarea>
+            </div>
+            <button id="generate-button" onclick="generateUnrevealedJSONs()">Generate and Download JSONs (.zip)</button>
+            <p id="progress"></p>
+        </div>
     </div>
     <script>
     function generateUnrevealedJSONs() {
