@@ -1,5 +1,5 @@
 # webtools
 A set of webtools to make your life easier!
 
+https://webtools.scatter.art/
 
-https://scatter-partners.github.io/webtools/
