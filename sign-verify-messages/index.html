@@ -1,46 +1,190 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
  <head>
+  <meta charset="UTF-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
    Message Signer and Verifier
   </title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet"/>
-  <style>
-   body {
-		  font-family: 'Roboto', sans-serif;
-		}
-	
-#centered-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-left: 100px;  /* Making sure the centered content does not overlap the sticky link */
-}
-
-#copy-message-link-button.copied {
-    background-color: #4CAF50; /* green */
-    color: white;
-    border: none;
-}
-  </style>
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript">
   </script>
   <style>
-   .green {
-            color: green;
-        }
-        .red {
-            color: red;
-        }
-		#sticky-link {
-		  position: fixed;
-		  top: 10px;
-		  left: 10px;
-		  padding: 5px;
-		  border-radius: 5px;
-		  text-decoration: underline;
-		  color: #ff3d00;
-		}
+   * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f9f9f8;
+      color: #242424;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 56px 20px 80px;
+    }
+
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #242424;
+      font-size: 14px;
+    }
+
+    #centered-content {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #777;
+      margin: 0 0 10px;
+    }
+
+    #sign-message,
+    #verify-message {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 100%;
+      min-height: 92px;
+      border: 1px solid #e0e0de;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #242424;
+      background: #fff;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      border-color: #aaa;
+    }
+
+    button {
+      border: 1px solid #e0e0de;
+      background: #fff;
+      color: #333;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 8px;
+      margin-right: 8px;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #bcbcb8;
+      color: #242424;
+      background: #fafaf9;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #connect-button,
+    #sign-button,
+    #verify-button {
+      background: #242424;
+      border-color: #242424;
+      color: #fff;
+    }
+
+    #connect-button:hover:not(:disabled),
+    #sign-button:hover:not(:disabled),
+    #verify-button:hover:not(:disabled) {
+      background: #242424;
+      border-color: #242424;
+      color: #fff;
+    }
+
+    button.copied {
+      background: #f0f0ee;
+      color: #555;
+      border-color: #d8d8d6;
+    }
+
+    #signed-message,
+    #message-to-verify {
+      margin-top: 6px;
+    }
+
+    #verification-result {
+      width: 100% !important;
+      min-height: 42px;
+      border: 1px solid #e8e8e6;
+      border-radius: 6px;
+      background: #fafaf9;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .green {
+      color: #15803d;
+    }
+
+    .red {
+      color: #b91c1c;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 52px 12px 28px;
+      }
+
+      #centered-content {
+        gap: 14px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      #sign-message,
+      #verify-message {
+        padding: 12px;
+      }
+
+      button {
+        width: 100%;
+        margin-right: 0;
+      }
+    }
   </style>
  </head>
  <body>
