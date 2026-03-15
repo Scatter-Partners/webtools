@@ -6,62 +6,190 @@
     <title>Generate JSONs No Traits</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.2/FileSaver.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
+            background: #f9f9f8;
+            color: #242424;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            padding: 60px 16px 48px;
         }
+
+        .page {
+            width: 100%;
+            max-width: 620px;
+            margin: 0 auto;
+        }
+
         #title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            color: #242424;
         }
+
+        .subtitle {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
         #input_zone {
-            text-align: center;
-            margin-bottom: 20px;
+            background: #fff;
+            border: 1px solid #e8e8e6;
+            border-radius: 10px;
+            padding: 18px;
         }
-        #input_zone input, #input_zone label {
-            margin: 5px;
+
+        .field {
+            margin-bottom: 14px;
         }
+
+        .field:last-of-type {
+            margin-bottom: 0;
+        }
+
+        #input_zone label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        #input_zone input {
+            width: 100%;
+            border: 1px solid #e0e0de;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #242424;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.15s;
+            appearance: textfield;
+        }
+
+        #input_zone input:focus {
+            border-color: #aaa;
+        }
+
+        #generate-button {
+            width: 100%;
+            background: #242424;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 13px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s, transform 0.1s;
+            letter-spacing: 0.01em;
+        }
+
+        #generate-button:hover:not(:disabled) {
+            background: #242424;
+        }
+
+        #generate-button:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+
+        #generate-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #progress {
+            margin-top: 12px;
+            min-height: 20px;
+            font-size: 12px;
+            color: #888;
+            letter-spacing: 0.01em;
+        }
+
         #sticky-link {
             position: fixed;
             top: 10px;
             left: 10px;
-            background-color: white;
             padding: 5px;
             border-radius: 5px;
             text-decoration: underline;
-            color: #ff3d00;
+            color: #242424;
+            font-size: 14px;
         }
-        #progress {
-            color: blue;
+
+        @media (max-width: 640px) {
+            body {
+                padding: 52px 12px 24px;
+            }
+
+            #title {
+                font-size: 18px;
+            }
+
+            #input_zone {
+                padding: 14px;
+                border-radius: 8px;
+            }
         }
     </style>
 </head>
 <body>
     <a id="sticky-link" href="../">Scatter Partners Webtools</a>
-    <div id="title">Generate JSONs No Traits</div>
-    <div id="input_zone">
-        <label for="protocol">Protocol:</label>
-        <input type="text" id="protocol" value="ipfs://"><br>
-        <label for="cid">CID:</label>
-        <input type="text" id="cid"><br>
-        <label for="filetype">Filetype:</label>
-        <input type="text" id="filetype" value=".png"><br>
-        <label for="supply">Supply:</label>
-        <input type="number" id="supply" value="10"><br>
-        <label for="name">Short Name:</label>
-        <input type="text" id="name" value="Short name"><br>
-        <label for="description">Description:</label>
-        <input type="text" id="description" value="Description"><br>
-        <label for="external-url">External URL (optional):</label>
-        <input type="text" id="external-url"><br>
-        <button id="generate-button" onclick="generateJSONs()">Generate and Download JSONs (.zip)</button>
-        <p id="progress"></p>
+    <div class="page">
+        <div id="title">Generate JSONs No Traits</div>
+        <p class="subtitle">Create clean numbered metadata JSON files from a single CID and download them as one zip.</p>
+        <div id="input_zone">
+            <div class="field">
+                <label for="protocol">Protocol</label>
+                <input type="text" id="protocol" value="ipfs://">
+            </div>
+            <div class="field">
+                <label for="cid">CID</label>
+                <input type="text" id="cid">
+            </div>
+            <div class="field">
+                <label for="filetype">Filetype</label>
+                <input type="text" id="filetype" value=".png">
+            </div>
+            <div class="field">
+                <label for="supply">Supply</label>
+                <input type="number" id="supply" value="10">
+            </div>
+            <div class="field">
+                <label for="name">Short Name</label>
+                <input type="text" id="name" value="Short name">
+            </div>
+            <div class="field">
+                <label for="description">Description</label>
+                <input type="text" id="description" value="Description">
+            </div>
+            <div class="field">
+                <label for="external-url">External URL (optional)</label>
+                <input type="text" id="external-url">
+            </div>
+            <button id="generate-button" onclick="generateJSONs()">Generate and Download JSONs (.zip)</button>
+            <p id="progress"></p>
+        </div>
     </div>
     <script>
     function generateJSONs() {
