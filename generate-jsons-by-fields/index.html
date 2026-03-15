@@ -2,65 +2,255 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generate JSONs by Fields</title>
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
-	<style>
-		body {
-		  font-family: 'Roboto', sans-serif;
-		}
-	</style>	
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.2/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            padding: 56px 20px 40px;
+            background: #f9f9f8;
+            color: #242424;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.45;
         }
-        .generation, .trait {
-            margin: 10px 0;
-            border: 1px solid black;
+
+        .page {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        #title {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin: 0 0 4px;
+        }
+
+        .subtitle {
+            margin: 0 0 28px;
+            color: #888;
+            font-size: 13px;
+        }
+
+        .generation {
+            margin: 0 0 18px;
+            border: 1px solid #e6e6e3;
+            border-radius: 10px;
+            padding: 16px;
+            background: #fff;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+        }
+
+        .generation > label,
+        .tool-options > label {
+            display: block;
+            margin-bottom: 12px;
+            color: #5f5f5f;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .generation .traits {
+            margin: 8px 0 10px;
+        }
+
+        .generation > div {
+            color: #888;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .trait {
+            margin: 0 0 8px;
+            border: 1px solid #ececea;
+            border-radius: 8px;
             padding: 10px;
+            background: #fcfcfb;
         }
+
+        .trait > label {
+            display: block;
+            margin-bottom: 8px;
+            color: #767676;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            margin-top: 6px;
+            border: 1px solid #e0e0de;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #242424;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        input:focus {
+            border-color: #aaa;
+        }
+
+        .generation .description,
         .trait input {
-            width: 50%;
+            width: 100% !important;
+        }
+
+        button {
+            border: 1px solid #e0e0de;
+            border-radius: 6px;
+            background: #fff;
+            color: #444;
+            padding: 9px 12px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s, background 0.15s;
+            margin: 0 6px 8px 0;
+        }
+
+        button:hover {
+            border-color: #bbb;
+            color: #242424;
+            background: #fafaf9;
+        }
+
+        .actions {
+            margin-top: 22px;
+            border-top: 1px solid #e8e8e6;
+            padding-top: 16px;
+        }
+
+        .actions > button[onclick="generate()"] {
+            width: 100%;
+            margin: 10px 0 0;
+            background: #242424;
+            color: #fff;
+            border-color: #242424;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .actions > button[onclick="generate()"]:hover {
+            background: #242424;
+            border-color: #242424;
+        }
+
+        .tool-options {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 14px;
+            margin-top: 4px;
+        }
+
+        .tool-options label {
+            text-transform: none;
+            letter-spacing: 0;
+            margin: 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .tool-options .checkbox-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tool-options label input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            margin: 0;
+            accent-color: #242424;
+            flex-shrink: 0;
+        }
+
+        .tool-options label input[type="text"] {
+            margin-top: 6px;
+        }
+
+        #progress {
+            margin-top: 14px;
+            min-height: 20px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        #sticky-link {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            text-decoration: underline;
+            color: #242424;
+            font-size: 14px;
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 52px 12px 28px;
+            }
+
+            .generation {
+                padding: 12px;
+                margin-bottom: 14px;
+            }
+
+            .tool-options {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            button {
+                width: 100%;
+                margin-right: 0;
+            }
         }
     </style>
-	<style>
-		body {
-		  display: flex;
-		  flex-direction: column;
-		  align-items: center;
-		  padding: 20px;
-		}
-		#title {
-		  text-align: center;
-		  font-size: 24px;
-		  font-weight: bold;
-		}
-		#sticky-link {
-		  position: fixed;
-		  top: 10px;
-		  left: 10px;
-		  background-color: white;
-		  padding: 5px;
-		  border-radius: 5px;
-		  text-decoration: underline;
-		  color: #ff3d00;
-		}
-	</style>	
 </head>
 <body>
-	<a id="sticky-link" href="https://scatter-partners.github.io/webtools/">Scatter Partners Webtools</a>
-    <div id="generations">
-    </div>
-    <button onclick="addGeneration()">Add Generation</button>
-    <label>Include #ID in name: <input type="checkbox" id="include-id"></label>
-    <label>Shuffle JSONs: <input type="checkbox" id="shuffle"></label>
-    <label>Random Seed: <input type="text" id="seed" value="123"></label>
-    <button onclick="generate()">Generate JSONs</button>
-    <p id="progress"></p>
+    <a id="sticky-link" href="https://scatter-partners.github.io/webtools/">Scatter Partners Webtools</a>
+    <main class="page">
+        <h1 id="title">Generate JSONs by Fields</h1>
+        <p class="subtitle">Build generation-based metadata sets and export them as a ZIP of numbered JSON files.</p>
+        <div id="generations">
+        </div>
+        <div class="actions">
+            <button onclick="addGeneration()">Add Generation</button>
+            <div class="tool-options">
+                <label class="checkbox-option" for="include-id"><input type="checkbox" id="include-id"><span>Include #ID in name:</span></label>
+                <label class="checkbox-option" for="shuffle"><input type="checkbox" id="shuffle"><span>Shuffle JSONs:</span></label>
+                <label>Random Seed: <input type="text" id="seed" value="123"></label>
+            </div>
+            <button onclick="generate()">Generate JSONs</button>
+        </div>
+        <p id="progress"></p>
+    </main>
     <script>
         let generations = 1;
         let traits = [1];
