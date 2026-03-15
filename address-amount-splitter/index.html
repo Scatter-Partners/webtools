@@ -1,68 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Address and Amount Splitter</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: 'Roboto', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
+      background: #f9f9f8;
+      color: #242424;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 56px 20px 80px;
     }
-    #title {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-    }
-    #input-container, #output-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+
     #sticky-link {
       position: fixed;
       top: 10px;
       left: 10px;
-      background-color: white;
       padding: 5px;
       border-radius: 5px;
       text-decoration: underline;
-      color: #ff3d00;
+      color: #242424;
+      font-size: 14px;
     }
-    textarea, button {
-      margin-top: 10px;
-      padding: 5px;
-      width: 350px;
-      border: 1px solid #bbb;
-      border-radius: 5px;
+
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
     }
+
+    #title {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .description {
+      color: #777;
+      font-size: 13px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+      max-width: 60ch;
+    }
+
+    #input-container {
+      margin-bottom: 22px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    textarea,
     button {
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #e0e0de;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    textarea {
+      background: #fff;
+      color: #242424;
+      padding: 10px 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 120px;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      border-color: #aaa;
+    }
+
+    button {
+      margin-top: 12px;
+      background: #242424;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      font-weight: 600;
       cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button:hover {
+      background: #242424;
+    }
+
+    button:active {
+      transform: scale(0.995);
+    }
+
+    #output-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .result-card {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    #address-list,
+    #amount-list {
+      min-height: 170px;
+      margin-top: 0;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 64px 14px 40px;
+      }
+
+      #output-container {
+        grid-template-columns: 1fr;
+      }
+
     }
   </style>
 </head>
 <body>
   <a id="sticky-link" href="https://webtools.scatter.art">Scatter Partners Webtools</a>
-  
-  <div id="title">Address and Amount Splitter</div> 
-  
-  <p style="max-width: 500px;">This tool is meant to make it easy to create address and amounts lists for the batchMintTo function when ran manually from a contract.</p>
 
-  <div id="input-container">
-    <label for="input-list">Enter address and amount pairs:</label>
-    <textarea rows="10" cols="60" id="input-list" placeholder="address1,amount1&#10;address2,amount2&#10;..."></textarea>
-    <button onclick="splitList()">Split List</button>
-  </div>
+  <main class="page">
+    <div id="title">Address and Amount Splitter</div>
+    <p class="description">This tool is meant to make it easy to create address and amounts lists for the batchMintTo function when ran manually from a contract.</p>
 
-  <div id="output-container">
-    <label for="address-list">Addresses:</label>
-    <textarea rows="5" cols="60" id="address-list" readonly></textarea>
-    <label for="amount-list">Amounts:</label>
-    <textarea rows="5" cols="60" id="amount-list" readonly></textarea>
-  </div>
+    <div id="input-container">
+      <label for="input-list">Enter address and amount pairs</label>
+      <textarea rows="10" cols="60" id="input-list" placeholder="address1,amount1&#10;address2,amount2&#10;..."></textarea>
+      <button onclick="splitList()">Split List</button>
+    </div>
+
+    <div id="output-container">
+      <section class="result-card">
+        <label for="address-list">Addresses</label>
+        <textarea rows="5" cols="60" id="address-list" readonly></textarea>
+      </section>
+      <section class="result-card">
+        <label for="amount-list">Amounts</label>
+        <textarea rows="5" cols="60" id="amount-list" readonly></textarea>
+      </section>
+    </div>
+  </main>
 
 <script>
 function splitList() {
