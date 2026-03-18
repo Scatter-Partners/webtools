@@ -1049,7 +1049,7 @@
             signal: AbortSignal.timeout(30000)
           })
           const data = await res.json()
-          const entries = Array(data).flat()
+          const entries = Array(data).flat().sort((a, b) => (a.id || 0) - (b.id || 0))
           const errors = entries.filter(entry => entry && entry.error)
           if (errors.length > 0) {
             const hasTransientError = errors.some(entry => {
@@ -1266,9 +1266,9 @@
               },
               onBatchResults: (batch, results) => {
                 let found = 0
-                for (let i = 0; i < results.length; i++) {
+                for (let i = 0; i < batch.length; i++) {
                   const tokenId = batch[i]
-                  const entry = results[i]
+                  const entry = i < results.length ? results[i] : null
                   if (!entry || entry.error || !entry.result || entry.result === '0x') {
                     scanState.failedIds.add(tokenId)
                     continue
