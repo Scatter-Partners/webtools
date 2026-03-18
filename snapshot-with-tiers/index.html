@@ -906,7 +906,7 @@
           'berachain-mainnet': { label: 'Berachain', explorer: 'https://berascan.com', publicRpc: 'https://berachain.drpc.org', batchSize: 3 },
           'hyperliquid-mainnet': { label: 'Hyperliquid', explorer: 'https://www.hyperscan.com', publicRpc: 'https://hyperliquid.drpc.org', batchSize: 3, alchemyFallback: false },
           'monad-mainnet': { label: 'Monad', explorer: 'https://monadexplorer.com', publicRpc: 'https://monad-mainnet.drpc.org'},
-          'megaeth-mainnet': { label: 'MegaETH', explorer: 'https://megaeth.blockscout.com', publicRpc: 'https://mainnet.megaeth.com/rpc', concurrency: 5, alchemyFallback: false },
+          'megaeth-mainnet': { label: 'MegaETH', explorer: 'https://megaeth.blockscout.com', publicRpc: 'https://mainnet.megaeth.com/rpc', concurrency: 2, alchemyFallback: false },
         }
 
         const DEFAULT_RANGES = [
@@ -1049,7 +1049,7 @@
             signal: AbortSignal.timeout(30000)
           })
           const data = await res.json()
-          const entries = Array(data).flat()
+          const entries = Array(data).flat().sort((a, b) => (a.id || 0) - (b.id || 0))
           const errors = entries.filter(entry => entry && entry.error)
           if (errors.length > 0) {
             const hasTransientError = errors.some(entry => {
@@ -1071,6 +1071,85 @@
           return scanState.usingFallback ? alchemyRpc(chain) : cfg.publicRpc || alchemyRpc(chain)
         }
 
+        // Finds the highest owned token ID above knownEnd (burns make totalSupply() unreliable).
+        // Returns null if nothing exists above knownEnd.
+        //
+        // We can't probe one ID at a time — ownerOf() is an individual RPC call and would be
+        // too slow for large collections. Instead, batchOwnerOf checks BATCH IDs per call,
+        // answering "does any token in this window have an owner?" to locate the boundary cheaply.
+        //
+        // Phase 1 — quick check (1 RPC call):
+        //   Probe the window [knownEnd+1 .. knownEnd+BATCH]. If it is empty, nothing exists
+        //   above knownEnd and we return null immediately without further calls.
+        //
+        // Phase 2 — exponential jump (1 RPC call per iteration):
+        //   Start high at knownEnd+200 and probe that window. If it has owners, advance low
+        //   to high (recording the last known-occupied position) and double the distance from
+        //   knownEnd so we leap further ahead each time. Repeat until a window is empty
+        //   (high is now a confirmed empty upper bound) or MAX_JUMP is reached.
+        //   Invariant after this phase: low has owners, high is empty.
+        //
+        // Phase 3 — binary search (1 RPC call per iteration):
+        //   [low, high] may still span thousands of IDs. Each call probes the midpoint window.
+        //   If the midpoint has owners the boundary is above it, so low advances to mid+BATCH.
+        //   If empty, the boundary is below it, so high retreats to mid.
+        //   Repeat until the gap is ≤ BINARY_THRESHOLD, small enough to scan directly.
+        //
+        // Phase 4 — linear scan (1 RPC call):
+        //   Fetch every ID in the small remaining window in one batched call. Walk the results
+        //   and track the highest ID with an owner — that is the exact answer.
+        const findMaxTokenId = async (rpcUrl, contract, knownEnd) => {
+          const BATCH = 20
+          const BINARY_THRESHOLD = BATCH * 3  // stop binary search when window is this small
+          const MAX_JUMP = 100_000            // hard cap on the exponential jump distance
+
+          const ownedAbove = async (start) => {
+            const ids = Array.from({ length: BATCH }, (_, i) => start + i)
+            const results = await batchOwnerOf(rpcUrl, contract, ids)
+            return results.some(r => hasOwner(r))
+          }
+
+          // Phase 1 — quick check
+          try { if (!await ownedAbove(knownEnd + 1)) return null }
+          catch { return null }
+
+          // Phase 2 — exponential jump to find [low, high] where low has owners and high is empty
+          let low = knownEnd
+          let high = knownEnd + 200
+          while (high - knownEnd <= MAX_JUMP) {
+            try {
+              if (!await ownedAbove(high)) break
+              low = high
+              high += (high - knownEnd)  // double the distance from the origin each time
+            } catch { break }
+          }
+
+          // Phase 3 — binary search to narrow [low, high] to BINARY_THRESHOLD
+          while (high - low > BINARY_THRESHOLD) {
+            const mid = Math.floor((low + high) / 2)
+            try {
+              if (await ownedAbove(mid)) low = mid + BATCH
+              else high = mid
+            } catch { high = mid }
+          }
+
+          // Phase 4 — linear scan of the narrow window for the exact highest owned token ID
+          const scanIds = Array.from({ length: high - low + BATCH }, (_, i) => low + i)
+          try {
+            const results = await batchOwnerOf(rpcUrl, contract, scanIds)
+            let max = knownEnd
+            for (let i = 0; i < results.length; i++) {
+              if (hasOwner(results[i])) max = scanIds[i]
+            }
+            return max > knownEnd ? max : null
+          } catch { return low > knownEnd ? low : null }
+        }
+
+        // Detects the token ID range for an ERC-721 contract.
+        // Returns { supply, startId } where startId is 0 or 1, and supply is
+        // the token count (= lastId + 1 for 0-indexed, = lastId for 1-indexed).
+        // When burns have occurred totalSupply() undercounts, so we probe above
+        // it with findMaxTokenId to find the real ceiling.
         const detectTokenRange = async (rpcUrl, contract, lockStart, lockEnd) => {
           let supply = null
           if (!lockEnd) {
@@ -1096,6 +1175,12 @@
                 if (hasOwner(result[0])) startId = 1
               } catch (_) { }
             }
+          }
+
+          if (!lockEnd && supply !== null) {
+            const estimatedEnd = startId === 0 ? supply - 1 : supply
+            const actualMax = await findMaxTokenId(rpcUrl, contract, estimatedEnd)
+            if (actualMax !== null) supply = startId === 0 ? actualMax + 1 : actualMax
           }
 
           return { supply, startId }
@@ -1266,9 +1351,9 @@
               },
               onBatchResults: (batch, results) => {
                 let found = 0
-                for (let i = 0; i < results.length; i++) {
+                for (let i = 0; i < batch.length; i++) {
                   const tokenId = batch[i]
-                  const entry = results[i]
+                  const entry = i < results.length ? results[i] : null
                   if (!entry || entry.error || !entry.result || entry.result === '0x') {
                     scanState.failedIds.add(tokenId)
                     continue
