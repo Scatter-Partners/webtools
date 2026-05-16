@@ -893,20 +893,20 @@
         const ALCHEMY_KEY = 'tPWqgHC6-1dU8Y9Wdc-50dRrcc4nhsIh'
 
         const CHAIN_REGISTRY = {
-          'eth-mainnet': { label: 'Ethereum', explorer: 'https://etherscan.io', publicRpc: 'https://eth.drpc.org', batchSize: 3 },
-          'base-mainnet': { label: 'Base', explorer: 'https://basescan.org', publicRpc: 'https://base.drpc.org', batchSize: 3 },
-          'arb-mainnet': { label: 'Arbitrum', explorer: 'https://arbiscan.io', publicRpc: 'https://arbitrum.drpc.org', batchSize: 3 },
+          'eth-mainnet':           { label: 'Ethereum',      explorer: 'https://etherscan.io',              publicRpc: 'https://eth.drpc.org',              batchSize: 3 },
+          'base-mainnet':          { label: 'Base',          explorer: 'https://basescan.org',                                                           batchSize: 10, concurrency: 1, scanDelayMs: 800 },
+          'arb-mainnet':           { label: 'Arbitrum',      explorer: 'https://arbiscan.io',               publicRpc: 'https://arb1.arbitrum.io/rpc',      batchSize: 10, concurrency: 1 },
           // 'sanko-mainnet': { ... }, // not implemented yet
-          'polygon-mainnet': { label: 'Polygon', explorer: 'https://polygonscan.com', publicRpc: 'https://polygon.drpc.org' },
-          'apechain-mainnet': { label: 'ApeChain', explorer: 'https://apescan.io', publicRpc: 'https://rpc.apechain.com' },
-          'abstract-mainnet': { label: 'Abstract', explorer: 'https://abscan.org', publicRpc: 'https://api.mainnet.abs.xyz' },
-          'ink-mainnet': { label: 'Ink', explorer: 'https://explorer.inkonchain.com', publicRpc: 'https://rpc-gel.inkonchain.com' },
-          'superposition-mainnet': { label: 'Superposition', explorer: 'https://explorer.superposition.so', publicRpc: 'https://rpc.superposition.so', batchSize: 13, concurrency: 1, scanDelayMs: 500, alchemyFallback: false },
+          'polygon-mainnet':       { label: 'Polygon',       explorer: 'https://polygonscan.com',           publicRpc: 'https://polygon.drpc.org' },
+          'apechain-mainnet':      { label: 'ApeChain',      explorer: 'https://apescan.io',                publicRpc: 'https://rpc.apechain.com/http' },
+          'abstract-mainnet':      { label: 'Abstract',      explorer: 'https://abscan.org',                publicRpc: 'https://api.mainnet.abs.xyz' },
+          'ink-mainnet':           { label: 'Ink',           explorer: 'https://explorer.inkonchain.com',   publicRpc: 'https://rpc-gel.inkonchain.com' },
+          'superposition-mainnet': { label: 'Superposition', explorer: 'https://explorer.superposition.so', publicRpc: 'https://rpc.superposition.so',      batchSize: 20, concurrency: 1, scanDelayMs: 500, alchemyFallback: false },
           // 'mantle-mainnet': { ... }, // not implemented yet
-          'berachain-mainnet': { label: 'Berachain', explorer: 'https://berascan.com', publicRpc: 'https://berachain.drpc.org', batchSize: 3 },
-          'hyperliquid-mainnet': { label: 'Hyperliquid', explorer: 'https://www.hyperscan.com', publicRpc: 'https://hyperliquid.drpc.org', batchSize: 3, alchemyFallback: false },
-          'monad-mainnet': { label: 'Monad', explorer: 'https://monadexplorer.com', publicRpc: 'https://rpc.monad.xyz', batchSize: 3, concurrency: 1, scanDelayMs: 500 },
-          'megaeth-mainnet': { label: 'MegaETH', explorer: 'https://megaeth.blockscout.com', publicRpc: 'https://mainnet.megaeth.com/rpc', concurrency: 2, alchemyFallback: false },
+          'berachain-mainnet':     { label: 'Berachain',     explorer: 'https://berascan.com',              publicRpc: 'https://berachain.drpc.org',        batchSize: 3 },
+          'hyperliquid-mainnet':   { label: 'Hyperliquid',   explorer: 'https://www.hyperscan.com',         publicRpc: 'https://hyperliquid.drpc.org',      batchSize: 1, scanDelayMs: 50 },
+          'monad-mainnet':         { label: 'Monad',         explorer: 'https://monadexplorer.com',         publicRpc: 'https://rpc.monad.xyz',             batchSize: 15, concurrency: 1, scanDelayMs: 1000 },
+          'megaeth-mainnet':       { label: 'MegaETH',       explorer: 'https://megaeth.blockscout.com',    publicRpc: 'https://mainnet.megaeth.com/rpc',   concurrency: 2 },
         }
 
         const DEFAULT_RANGES = [
