@@ -61,7 +61,7 @@ export const CHAINS = {
       'https://polygon.drpc.org',
     ],
     alchemy: true,
-    batch: 20,
+    batch: 3,
     workers: 1,
     delay: 0,
   },
