@@ -1,19 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NFT Holder Scanner</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-    *,
-    *::before,
-    *::after {
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    [v-cloak] {
+      display: none;
     }
 
     body {
@@ -25,16 +26,12 @@
       padding: 60px 24px 80px;
     }
 
-    [v-cloak] {
-      display: none;
-    }
-
     .page {
       max-width: 620px;
       margin: 0 auto;
     }
 
-    /* ── HEADER ── */
+    /* -- HEADER -- */
     h1 {
       font-size: 20px;
       font-weight: 600;
@@ -53,7 +50,19 @@
       color: inherit;
     }
 
-    /* ── FORM SECTIONS ── */
+    /* -- STICKY LINKS -- */
+    #sticky-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      text-decoration: underline;
+      color: #242424;
+      font-size: 14px;
+    }
+
+    /* -- FORM FIELDS -- */
     .field {
       margin-bottom: 24px;
     }
@@ -73,7 +82,6 @@
     }
 
     input[type="text"],
-    input[type="password"],
     input[type="number"] {
       width: 100%;
       border: 1px solid #e0e0de;
@@ -104,6 +112,11 @@
       color: #bbb;
     }
 
+    input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     select {
       width: 100%;
       border: 1px solid #e0e0de;
@@ -123,7 +136,65 @@
       border-color: #aaa;
     }
 
-    /* ── RANGES ── */
+    select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #e8e8e6;
+      margin: 24px 0;
+    }
+
+    /* -- DETECT STATUS -- */
+    .detect-status {
+      font-size: 11px;
+      margin-top: 6px;
+      min-height: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .detect-status.ok {
+      color: #16a34a;
+    }
+
+    .detect-status.err {
+      color: #d97706;
+    }
+
+    .detect-status.spin {
+      color: #aaa;
+    }
+
+    @keyframes spin-dot {
+      0%, 100% { opacity: 0.3; }
+      50%      { opacity: 1; }
+    }
+
+    .detect-status.spin::before {
+      content: '\27F3 ';
+      display: inline-block;
+      animation: spin-dot 1s ease-in-out infinite;
+      position: relative;
+      top: -1px;
+      margin-right: 1px;
+    }
+
+    input.detecting {
+      border-color: #aaa;
+      color: #aaa;
+      background: #fafaf9;
+    }
+
+    /* -- GRID -- */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* -- RANGES -- */
     #rangesEditor {
       display: flex;
       flex-direction: column;
@@ -165,6 +236,10 @@
       flex-shrink: 0;
       user-select: none;
       white-space: nowrap;
+      margin: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
     }
 
     .no-limit-label input[type="checkbox"] {
@@ -223,7 +298,7 @@
       background: #fafaf9;
     }
 
-    /* ── SCAN BUTTON ── */
+    /* -- SCAN BUTTON -- */
     .btn-scan {
       width: 100%;
       background: #242424;
@@ -241,7 +316,7 @@
     }
 
     .btn-scan:hover:not(:disabled) {
-      background: #242424;
+      background: #333;
     }
 
     .btn-scan:active:not(:disabled) {
@@ -253,18 +328,20 @@
       cursor: not-allowed;
     }
 
-    /* ── STATUS ── */
+    .btn-scan.cancelling {
+      background: #c04040;
+    }
+
+    .btn-scan.cancelling:hover:not(:disabled) {
+      background: #a03030;
+    }
+
+    /* -- STATUS -- */
     .status {
       margin-top: 20px;
       font-size: 13px;
       padding: 10px 14px;
       border-radius: 6px;
-    }
-
-    .status.loading {
-      background: #f4f4f2;
-      color: #888;
-      animation: pulse 1.2s ease-in-out infinite;
     }
 
     .status.error {
@@ -273,19 +350,155 @@
       border: 1px solid #f0cece;
     }
 
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 0.6
-      }
-
-      50% {
-        opacity: 1
-      }
+    /* -- PROGRESS -- */
+    .progress-section {
+      margin-top: 28px;
     }
 
-    /* ── RESULTS ── */
+    .progress-bar {
+      height: 4px;
+      background: #ebebea;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #242424;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: #aaa;
+      text-align: right;
+    }
+
+    /* -- STATS -- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 600;
+      color: #242424;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    /* -- FAILED INFO -- */
+    .failed-box {
+      margin-top: 12px;
+      background: #fff8f8;
+      border: 1px solid #f0d8d8;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #c04040;
+      line-height: 1.6;
+    }
+
+    /* -- LOG -- */
+    .log-wrap {
+      margin-top: 20px;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .log-title {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    .btn-clear-log {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 11px;
+      color: #ccc;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .btn-clear-log:hover {
+      color: #888;
+    }
+
+    .log-box {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 14px;
+      height: 260px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .log-box::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .log-box::-webkit-scrollbar-thumb {
+      background: #e0e0de;
+      border-radius: 2px;
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-time {
+      color: #ccc;
+      flex-shrink: 0;
+    }
+
+    .ok      { color: #16a34a; }
+    .error   { color: #dc2626; }
+    .info    { color: #555; }
+    .warning { color: #d97706; }
+
+    .faded {
+      opacity: 0.3;
+    }
+
+    /* -- RESULTS -- */
     #results {
       margin-top: 36px;
     }
@@ -369,6 +582,47 @@
     .btn-copy-tier:hover {
       border-color: #bbb;
       color: #333;
+    }
+
+    .btn-toggle {
+      background: none;
+      border: 1px solid #e0e0de;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-toggle:hover {
+      border-color: #bbb;
+      color: #333;
+    }
+
+    .chevron-icon {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      font-style: normal;
+      font-size: 10px;
+    }
+
+    .chevron-icon.open {
+      transform: rotate(180deg);
+    }
+
+    .tier-body {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .tier-body.open {
+      display: block;
     }
 
     .wallet-table {
@@ -456,317 +710,64 @@
       border-radius: 8px;
     }
 
-    .btn-toggle {
-      background: none;
-      border: 1px solid #e0e0de;
-      border-radius: 4px;
-      padding: 4px 10px;
-      font-family: inherit;
-      font-size: 11px;
-      color: #888;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      letter-spacing: 0.02em;
-    }
-
-    .btn-toggle:hover {
-      border-color: #bbb;
-      color: #333;
-    }
-
-    .chevron-icon {
-      display: inline-block;
-      transition: transform 0.2s ease;
-      font-style: normal;
-      font-size: 10px;
-    }
-
-    .chevron-icon.open {
-      transform: rotate(180deg);
-    }
-
-    .tier-body {
-      display: none;
-      margin-top: 8px;
-    }
-
-    .tier-body.open {
-      display: block;
-    }
-
-    .divider {
-      border: none;
-      border-top: 1px solid #e8e8e6;
-      margin: 24px 0;
-    }
-
-    #sticky-link {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      padding: 5px;
-      border-radius: 5px;
-      text-decoration: underline;
-      color: #242424;
-      font-size: 14px;
-    }
-
-    /* ── DETECT STATUS ── */
-    .detect-status {
-      font-size: 11px;
-      margin-top: 6px;
-      min-height: 20px;
-      letter-spacing: 0.01em;
-    }
-
-    .detect-status.ok {
-      color: #16a34a;
-    }
-
-    .detect-status.err {
-      color: #d97706;
-    }
-
-    .detect-status.spin {
-      color: #aaa;
-    }
-
-    @keyframes spin-dot {
-
-      0%,
-      100% {
-        opacity: 0.3;
+    /* -- RESPONSIVE -- */
+    @media (max-width: 640px) {
+      body {
+        padding: 58px 14px 40px;
       }
 
-      50% {
-        opacity: 1;
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
       }
-    }
-
-    .detect-status.spin::before {
-      content: '⟳ ';
-      display: inline-block;
-      animation: spin-dot 1s ease-in-out infinite;
-      position: relative;
-      top: -1px;
-      margin-right: 1px;
-    }
-
-    input.detecting {
-      border-color: #aaa;
-      color: #aaa;
-      background: #fafaf9;
-    }
-
-    /* ── GRID ── */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    /* ── PROGRESS ── */
-    .progress-section {
-      margin-top: 28px;
-    }
-
-    .progress-bar {
-      height: 4px;
-      background: #ebebea;
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: #242424;
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.25s ease;
-    }
-
-    .progress-label {
-      font-size: 12px;
-      color: #aaa;
-      text-align: right;
-    }
-
-    /* ── STATS ── */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .stat-card {
-      background: #fff;
-      border: 1px solid #e8e8e6;
-      border-radius: 8px;
-      padding: 14px 12px;
-      text-align: center;
-    }
-
-    .stat-val {
-      font-size: 18px;
-      font-weight: 600;
-      color: #242424;
-      letter-spacing: -0.02em;
-    }
-
-    .stat-label {
-      font-size: 10px;
-      color: #bbb;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-top: 4px;
-    }
-
-    /* ── FAILED INFO ── */
-    .failed-box {
-      margin-top: 12px;
-      background: #fff8f8;
-      border: 1px solid #f0d8d8;
-      border-radius: 6px;
-      padding: 10px 14px;
-      font-size: 12px;
-      color: #c04040;
-      line-height: 1.6;
-    }
-
-    /* ── LOG ── */
-    .log-wrap {
-      margin-top: 20px;
-    }
-
-    .log-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .log-title {
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: #888;
-    }
-
-    .btn-clear-log {
-      background: none;
-      border: none;
-      font-family: inherit;
-      font-size: 11px;
-      color: #ccc;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-
-    .btn-clear-log:hover {
-      color: #888;
-    }
-
-    .log-box {
-      background: #fff;
-      border: 1px solid #e8e8e6;
-      border-radius: 8px;
-      padding: 14px;
-      height: 260px;
-      overflow-y: auto;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 11px;
-      line-height: 1.8;
-    }
-
-    .log-box::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .log-box::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .log-box::-webkit-scrollbar-thumb {
-      background: #e0e0de;
-      border-radius: 2px;
-    }
-
-    .log-entry {
-      display: flex;
-      gap: 10px;
-    }
-
-    .log-time {
-      color: #ccc;
-      flex-shrink: 0;
-    }
-
-    .ok {
-      color: #16a34a;
-    }
-
-    .error {
-      color: #dc2626;
-    }
-
-    .info {
-      color: #555;
-    }
-
-    .warning {
-      color: #d97706;
-    }
-
-    .faded {
-      opacity: 0.3;
     }
   </style>
 </head>
 
 <body>
   <a id="sticky-link" href="../">Scatter Partners Webtools</a>
-  <div id="app" class="page" v-cloak>
 
+  <main id="app" class="page" v-cloak>
     <h1>NFT Holder Scanner</h1>
     <p class="subtitle">
-      Snapshot holders by range · any ERC-721 contract · ownerOf scan<br />
+      Snapshot holders by range &middot; any ERC-721 contract &middot; ownerOf scan<br />
       Inspired by Bluu's <a href="https://github.com/bluudmg/NFT-Tools-" target="_blank" rel="noopener noreferrer">code</a>.
     </p>
 
     <div class="field">
-      <label>Chain</label>
-      <select v-model="formState.chain" @change="onChainChange" :disabled="scanState.scanning">
-        <option v-for="chainKey in chainOrder" :key="chainKey" :value="chainKey">{{ CHAIN_REGISTRY[chainKey].label }}
-        </option>
+      <label for="chain-select">Chain</label>
+      <select id="chain-select" v-model="form.chain" @change="onChainChange" :disabled="run.active">
+        <option v-for="(cfg, key) in CHAINS" :key="key" :value="key">{{ cfg.label }}</option>
       </select>
     </div>
 
     <div class="field">
-      <label>Contract Address</label>
-      <input type="text" v-model.trim="formState.contractAddr" placeholder="0x06f97e756f5c7ac0db75411101bd09e17f63aba7"
-        @input="onContractInput" :readonly="scanState.scanning" />
-      <div class="detect-status" :class="detectState.type">{{ detectState.message }}</div>
+      <label for="contract-input">Contract Address</label>
+      <input id="contract-input" type="text"
+        v-model.trim="form.contract"
+        @input="onContractInput"
+        :readonly="run.active"
+        placeholder="0x06f97e756f5c7ac0db75411101bd09e17f63aba7" />
+      <div class="detect-status" :class="detect.type">{{ detect.message }}</div>
     </div>
 
     <hr class="divider" />
 
     <div class="grid-2">
       <div class="field field--flush">
-        <label>Token ID Start</label>
-        <input type="number" placeholder="Auto" v-model="formState.tokenStart"
-          :class="{ detecting: detectState.detectingStart }" @input="onTokenStartInput"
-          :disabled="scanState.scanning" />
+        <label for="token-start-input">Token ID Start</label>
+        <input id="token-start-input" type="number" placeholder="Auto"
+          v-model="form.tokenStart"
+          :class="{ detecting: detect.busyStart }"
+          @input="onTokenStartInput"
+          :disabled="run.active" />
       </div>
       <div class="field field--flush">
-        <label>Token ID End</label>
-        <input type="number" placeholder="Auto" v-model="formState.tokenEnd"
-          :class="{ detecting: detectState.detectingEnd }" @input="onTokenEndInput" :disabled="scanState.scanning" />
+        <label for="token-end-input">Token ID End</label>
+        <input id="token-end-input" type="number" placeholder="Auto"
+          v-model="form.tokenEnd"
+          :class="{ detecting: detect.busyEnd }"
+          @input="onTokenEndInput"
+          :disabled="run.active" />
       </div>
     </div>
 
@@ -776,87 +777,91 @@
       <label>Holder Ranges</label>
       <div id="rangesEditor">
         <div class="range-row" v-for="(range, index) in ranges" :key="index">
-          <input type="number" min="0" placeholder="Min" v-model.number="range.min" :disabled="scanState.scanning" />
+          <input type="number" min="0" placeholder="Min" v-model.number="range.min" :disabled="run.active" />
           <span class="sep">to</span>
           <input type="number" min="0" placeholder="Max" v-model.number="range.max"
-            :disabled="scanState.scanning || range.noLimit" :class="{ faded: range.noLimit }" />
+            :disabled="run.active || range.noLimit" :class="{ faded: range.noLimit }" />
           <label class="no-limit-label">
-            <input type="checkbox" :checked="range.noLimit" @change="toggleNoLimit(index, $event.target.checked)"
-              :disabled="scanState.scanning" />
+            <input type="checkbox" :checked="range.noLimit"
+              @change="toggleNoLimit(index, $event.target.checked)"
+              :disabled="run.active" />
             no limit
           </label>
-          <input type="color" v-model="range.color" :disabled="scanState.scanning" />
-          <button class="btn-remove" @click="removeRange(index)" title="Remove"
-            :disabled="scanState.scanning">×</button>
+          <input type="color" v-model="range.color" :disabled="run.active" />
+          <button class="btn-remove" @click="removeRange(index)" title="Remove" :disabled="run.active">&times;</button>
         </div>
       </div>
-      <button class="btn-add-range" @click="addRange" :disabled="scanState.scanning">+ Add
-        range</button>
+      <button class="btn-add-range" @click="addRange" :disabled="run.active">+ Add range</button>
     </div>
 
-    <button class="btn-scan" @click="startScan" :disabled="scanState.scanning">{{ scanState.scanning ? 'Scanning...' :
-      'Scan holders' }}</button>
+    <button class="btn-scan"
+      :class="{ cancelling: run.active }"
+      :disabled="run.stopping"
+      @click="run.active ? stopScan() : startScan()">
+      {{ run.stopping ? 'Cancelling...' : run.active ? 'Cancel Scan' : 'Scan holders' }}
+    </button>
 
-    <div v-if="statusState.visible" class="status" :class="statusState.type">{{ statusState.message }}
-    </div>
+    <div v-if="status.visible" class="status" :class="status.type">{{ status.message }}</div>
 
-    <div v-if="scanState.showProgress" class="progress-section">
+    <div v-if="run.open" class="progress-section">
       <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: `${scanState.progressPercent}%` }"></div>
+        <div class="progress-fill" :style="{ width: run.pct + '%' }"></div>
       </div>
-      <div class="progress-label">{{ scanState.progressLabel }}</div>
+      <div class="progress-label">{{ run.progressText }}</div>
     </div>
 
-    <div v-if="scanState.showStats" class="stats">
+    <div v-if="run.open" class="stats">
       <div class="stat-card">
-        <div class="stat-val">{{ stats.holders }}</div>
+        <div class="stat-val">{{ cards.holders }}</div>
         <div class="stat-label">Unique Holders</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">{{ stats.supply }}</div>
+        <div class="stat-val">{{ cards.tokens }}</div>
         <div class="stat-label">Tokens Found</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">{{ stats.failed }}</div>
+        <div class="stat-val">{{ cards.failed }}</div>
         <div class="stat-label">Failed / Burned</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">{{ stats.progress }}</div>
+        <div class="stat-val">{{ cards.queried }}</div>
         <div class="stat-label">Queried</div>
       </div>
     </div>
 
-    <div class="failed-box" v-if="scanState.failedInfo">{{ scanState.failedInfo }}
-    </div>
+    <div class="failed-box" v-if="run.failedInfo">{{ run.failedInfo }}</div>
 
-    <div v-if="scanState.showLog" class="log-wrap">
+    <div v-if="run.open" class="log-wrap">
       <div class="log-header">
         <span class="log-title">Activity log</span>
         <button class="btn-clear-log" @click="clearLog">Clear</button>
       </div>
-      <div class="log-box" ref="logBoxRef">
-        <div class="log-entry" v-for="(entry, index) in scanState.logs" :key="index">
-          <span class="log-time">{{ entry.time }}</span><span :class="entry.type">{{ entry.message }}</span>
+      <div class="log-box" ref="logPane">
+        <div class="log-entry" v-for="(entry, i) in logs" :key="i">
+          <span class="log-time">{{ entry.time }}</span>
+          <span :class="entry.kind">{{ entry.text }}</span>
         </div>
       </div>
     </div>
 
-    <div id="results" v-if="scanState.showResults">
+    <div id="results" v-if="results.show">
       <div class="results-header">
-        <span class="results-title">{{ scanState.shortContract }}</span>
-        <span class="results-meta">{{ scanState.totalHolders }} unique holders</span>
+        <span class="results-title">{{ results.shortContract }}</span>
+        <span class="results-meta">{{ results.totalHolders }} unique holders</span>
       </div>
 
-      <template v-for="(bucket, index) in scanState.bucketed" :key="index">
+      <template v-for="(bucket, index) in results.bucketed" :key="index">
         <div class="tier-block">
           <div class="tier-top">
-            <span class="tier-name"><span class="tier-dot" :style="{ background: bucket.color }"></span>{{
-              rangeLabel(bucket) }} holders</span>
+            <span class="tier-name">
+              <span class="tier-dot" :style="{ background: bucket.color }"></span>{{ rangeLabel(bucket) }} holders
+            </span>
             <div class="tier-actions">
               <span class="count-pill">{{ bucket.wallets.length }}</span>
               <button class="btn-copy-tier" @click="copyBucket(index, $event)">Copy all</button>
-              <button class="btn-toggle" @click="toggleBody(index)"><i class="chevron-icon"
-                  :class="{ open: isTierOpen(index) }">▼</i></button>
+              <button class="btn-toggle" @click="toggleBody(index)">
+                <i class="chevron-icon" :class="{ open: isTierOpen(index) }">&#9660;</i>
+              </button>
             </div>
           </div>
 
@@ -868,678 +873,21 @@
                 <span class="wallet-addr-text" :title="wallet.address">{{ wallet.address }}</span>
                 <div class="wallet-right">
                   <span class="holding-num">{{ wallet.count }}</span>
-                  <button class="ico-btn" @click="copyText(wallet.address, wallet.count, $event)" title="Copy">⧉</button>
-                  <a class="scan-link" :href="`${scanState.explorerBase}${scanState.explorerAddrPath}${wallet.address}`"
-                    target="_blank" rel="noopener noreferrer" title="Explorer">↗</a>
+                  <button class="ico-btn" @click="copyWallet(wallet, $event)" title="Copy">&#10697;</button>
+                  <a class="scan-link" :href="`${results.explorer}/address/${wallet.address}`"
+                    target="_blank" rel="noopener noreferrer" title="Explorer">&#8599;</a>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <hr class="divider" v-if="index < scanState.bucketed.length - 1" />
+        <hr class="divider" v-if="index < results.bucketed.length - 1" />
       </template>
     </div>
-  </div>
+  </main>
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <script>
-    const app = Vue.createApp({
-      setup() {
-        // ── Constants ──
-        const OWNER_OF_SIG = '0x6352211e' // ownerOf(uint256)
-        const TOTAL_SUPPLY_SIG = '0x18160ddd' // totalSupply()
-        const RETRY_DELAYS_MS = [3000, 6000, 12000, 24000, 48000]
-        const ALCHEMY_KEY = 'tPWqgHC6-1dU8Y9Wdc-50dRrcc4nhsIh'
-
-        const CHAIN_REGISTRY = {
-          'eth-mainnet':           { label: 'Ethereum',      explorer: 'https://etherscan.io',              publicRpc: 'https://eth.drpc.org',              batchSize: 3 },
-          'base-mainnet':          { label: 'Base',          explorer: 'https://basescan.org',                                                           batchSize: 10, concurrency: 1, scanDelayMs: 800 },
-          'arb-mainnet':           { label: 'Arbitrum',      explorer: 'https://arbiscan.io',               publicRpc: 'https://arb1.arbitrum.io/rpc',      batchSize: 10, concurrency: 1 },
-          // 'sanko-mainnet': { ... }, // not implemented yet
-          'polygon-mainnet':       { label: 'Polygon',       explorer: 'https://polygonscan.com',           publicRpc: 'https://polygon.drpc.org' },
-          'apechain-mainnet':      { label: 'ApeChain',      explorer: 'https://apescan.io',                publicRpc: 'https://rpc.apechain.com/http' },
-          'abstract-mainnet':      { label: 'Abstract',      explorer: 'https://abscan.org',                publicRpc: 'https://api.mainnet.abs.xyz' },
-          'ink-mainnet':           { label: 'Ink',           explorer: 'https://explorer.inkonchain.com',   publicRpc: 'https://rpc-gel.inkonchain.com' },
-          'superposition-mainnet': { label: 'Superposition', explorer: 'https://explorer.superposition.so', publicRpc: 'https://rpc.superposition.so',      batchSize: 20, concurrency: 1, scanDelayMs: 500, alchemyFallback: false },
-          // 'mantle-mainnet': { ... }, // not implemented yet
-          'berachain-mainnet':     { label: 'Berachain',     explorer: 'https://berascan.com',              publicRpc: 'https://berachain.drpc.org',        batchSize: 3 },
-          'hyperliquid-mainnet':   { label: 'Hyperliquid',   explorer: 'https://www.hyperscan.com',         publicRpc: 'https://hyperliquid.drpc.org',      batchSize: 1, scanDelayMs: 50 },
-          'monad-mainnet':         { label: 'Monad',         explorer: 'https://monadexplorer.com',         publicRpc: 'https://rpc.monad.xyz',             batchSize: 15, concurrency: 1, scanDelayMs: 1000 },
-          'megaeth-mainnet':       { label: 'MegaETH',       explorer: 'https://megaeth.blockscout.com',    publicRpc: 'https://mainnet.megaeth.com/rpc',   concurrency: 2 },
-        }
-
-        const DEFAULT_RANGES = [
-          { min: 1, max: 10, noLimit: false, color: '#f0a030' },
-          { min: 11, max: 20, noLimit: false, color: '#9b72cf' },
-          { min: 21, max: 30, noLimit: false, color: '#4a9edd' },
-          { min: 31, max: 999, noLimit: true, color: '#3dbf90' }
-        ]
-
-        const PALETTE = ['#f0a030', '#9b72cf', '#4a9edd', '#3dbf90', '#e05080', '#60b040', '#d06040', '#4080d0']
-        const ZERO_ADDR = '0x0000000000000000000000000000000000000000'
-
-        // ── Utilities ──
-        const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-
-        const fmtTime = (s) => {
-          if (s < 60) return `${s}s`
-          if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`
-          return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`
-        }
-
-        const alchemyRpc = (chain) => `https://${chain}.g.alchemy.com/v2/${ALCHEMY_KEY}`
-
-        // ── Reactive State ──
-        const formState = Vue.reactive({
-          chain: 'eth-mainnet',
-          contractAddr: '',
-          tokenStart: '',
-          tokenEnd: '',
-          userLockedStart: false,
-          userLockedEnd: false
-        })
-
-        const detectState = Vue.reactive({
-          message: '',
-          type: '',
-          detectingStart: false,
-          detectingEnd: false
-        })
-
-        const statusState = Vue.reactive({
-          message: '',
-          type: '',
-          visible: false
-        })
-
-        const scanState = Vue.reactive({
-          scanning: false,
-          usingFallback: false,
-          holderMap: {},
-          failedIds: new Set(),
-          logs: [],
-          progressPercent: 0,
-          progressLabel: '\u2014',
-          showProgress: false,
-          showStats: false,
-          showLog: false,
-          showResults: false,
-          failedInfo: '',
-          bucketed: [],
-          shortContract: '',
-          totalHolders: '0',
-          explorerBase: '',
-          explorerAddrPath: '/address/'
-        })
-
-        const ranges = Vue.ref(DEFAULT_RANGES.map(r => ({ ...r })))
-        const tierOpen = Vue.reactive({})
-        const chainOrder = Object.keys(CHAIN_REGISTRY)
-        let detectTimer = null
-        const logBoxRef = Vue.ref(null)
-
-        // ── Computed ──
-        const stats = Vue.computed(() => {
-          const holderValues = Object.values(scanState.holderMap)
-          const unique = new Set(holderValues)
-          const found = Object.keys(scanState.holderMap).length
-          const failed = scanState.failedIds.size
-          return {
-            holders: unique.size.toLocaleString(),
-            supply: found.toLocaleString(),
-            failed: failed.toLocaleString(),
-            progress: (found + failed).toLocaleString()
-          }
-        })
-
-        // ── Log ──
-        const log = (type = 'info', message = '') => {
-          const box = logBoxRef.value
-          const shouldAutoScroll = !box || box.scrollTop + box.clientHeight >= box.scrollHeight - 24
-          scanState.logs.push({
-            time: new Date().toLocaleTimeString(),
-            message,
-            type
-          })
-          if (shouldAutoScroll) {
-            Vue.nextTick(() => { if (logBoxRef.value) logBoxRef.value.scrollTop = logBoxRef.value.scrollHeight })
-          }
-        }
-
-        const clearLog = () => { scanState.logs = [] }
-
-        // ── Status ──
-        const showStatus = (message, type) => {
-          statusState.message = message
-          statusState.type = type
-          statusState.visible = true
-        }
-
-        const hideStatus = () => {
-          statusState.visible = false
-          statusState.message = ''
-          statusState.type = ''
-        }
-
-        // ── RPC Layer ──
-        const rpcCall = async (rpc, method, params, timeout = 15000) => {
-          const res = await fetch(rpc, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
-            signal: AbortSignal.timeout(timeout)
-          })
-          const json = await res.json()
-          if (json.error) throw new Error(json.error.message || JSON.stringify(json.error))
-          return json.result
-        }
-
-        const batchOwnerOf = async (rpc, contract, tokenIds) => {
-          const requests = tokenIds.map((tokenId, i) => ({
-            jsonrpc: '2.0',
-            id: i,
-            method: 'eth_call',
-            params: [{ to: contract, data: `${OWNER_OF_SIG}${tokenId.toString(16).padStart(64, '0')}` }, 'latest']
-          }))
-          const res = await fetch(rpc, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requests),
-            signal: AbortSignal.timeout(30000)
-          })
-          const data = await res.json()
-          const entries = Array(data).flat().sort((a, b) => (a.id || 0) - (b.id || 0))
-          const errors = entries.filter(entry => entry && entry.error)
-          if (errors.length > 0) {
-            const hasTransientError = errors.some(entry => {
-              const code = entry.error.code
-              const msg = (entry.error.message || '').toLowerCase()
-              const isRevert = code === 3 || msg.includes('revert')
-              return !isRevert
-            })
-            if (hasTransientError) {
-              throw new Error(errors[0].error.message || JSON.stringify(errors[0].error))
-            }
-          }
-          return entries
-        }
-
-        // ── Detection ──
-        const getActiveRpc = (chain) => {
-          const cfg = CHAIN_REGISTRY[chain]
-          return scanState.usingFallback ? alchemyRpc(chain) : cfg.publicRpc || alchemyRpc(chain)
-        }
-
-        // Finds the highest owned token ID above knownEnd (burns make totalSupply() unreliable).
-        // Returns null if nothing exists above knownEnd.
-        //
-        // We can't probe one ID at a time — ownerOf() is an individual RPC call and would be
-        // too slow for large collections. Instead, batchOwnerOf checks BATCH IDs per call,
-        // answering "does any token in this window have an owner?" to locate the boundary cheaply.
-        //
-        // Phase 1 — quick check (1 RPC call):
-        //   Probe the window [knownEnd+1 .. knownEnd+BATCH]. If it is empty, nothing exists
-        //   above knownEnd and we return null immediately without further calls.
-        //
-        // Phase 2 — exponential jump (1 RPC call per iteration):
-        //   Start high at knownEnd+200 and probe that window. If it has owners, advance low
-        //   to high (recording the last known-occupied position) and double the distance from
-        //   knownEnd so we leap further ahead each time. Repeat until a window is empty
-        //   (high is now a confirmed empty upper bound) or MAX_JUMP is reached.
-        //   Invariant after this phase: low has owners, high is empty.
-        //
-        // Phase 3 — binary search (1 RPC call per iteration):
-        //   [low, high] may still span thousands of IDs. Each call probes the midpoint window.
-        //   If the midpoint has owners the boundary is above it, so low advances to mid+BATCH.
-        //   If empty, the boundary is below it, so high retreats to mid.
-        //   Repeat until the gap is ≤ BINARY_THRESHOLD, small enough to scan directly.
-        //
-        // Phase 4 — linear scan (1 RPC call):
-        //   Fetch every ID in the small remaining window in one batched call. Walk the results
-        //   and track the highest ID with an owner — that is the exact answer.
-        const findMaxTokenId = async (rpcUrl, contract, knownEnd) => {
-          const BATCH = 20
-          const BINARY_THRESHOLD = BATCH * 3  // stop binary search when window is this small
-          const MAX_JUMP = 100_000            // hard cap on the exponential jump distance
-
-          const ownedAbove = async (start) => {
-            const ids = Array.from({ length: BATCH }, (_, i) => start + i)
-            const results = await batchOwnerOf(rpcUrl, contract, ids)
-            return results.some(r => hasOwner(r))
-          }
-
-          // Phase 1 — quick check
-          try { if (!await ownedAbove(knownEnd + 1)) return null }
-          catch { return null }
-
-          // Phase 2 — exponential jump to find [low, high] where low has owners and high is empty
-          let low = knownEnd
-          let high = knownEnd + 200
-          while (high - knownEnd <= MAX_JUMP) {
-            try {
-              if (!await ownedAbove(high)) break
-              low = high
-              high += (high - knownEnd)  // double the distance from the origin each time
-            } catch { break }
-          }
-
-          // Phase 3 — binary search to narrow [low, high] to BINARY_THRESHOLD
-          while (high - low > BINARY_THRESHOLD) {
-            const mid = Math.floor((low + high) / 2)
-            try {
-              if (await ownedAbove(mid)) low = mid + BATCH
-              else high = mid
-            } catch { high = mid }
-          }
-
-          // Phase 4 — linear scan of the narrow window for the exact highest owned token ID
-          const scanIds = Array.from({ length: high - low + BATCH }, (_, i) => low + i)
-          try {
-            const results = await batchOwnerOf(rpcUrl, contract, scanIds)
-            let max = knownEnd
-            for (let i = 0; i < results.length; i++) {
-              if (hasOwner(results[i])) max = scanIds[i]
-            }
-            return max > knownEnd ? max : null
-          } catch { return low > knownEnd ? low : null }
-        }
-
-        // Detects the token ID range for an ERC-721 contract.
-        // Returns { supply, startId } where startId is 0 or 1, and supply is
-        // the token count (= lastId + 1 for 0-indexed, = lastId for 1-indexed).
-        // When burns have occurred totalSupply() undercounts, so we probe above
-        // it with findMaxTokenId to find the real ceiling.
-        const detectTokenRange = async (rpcUrl, contract, lockStart, lockEnd) => {
-          let supply = null
-          if (!lockEnd) {
-            try {
-              const result = await rpcCall(rpcUrl, 'eth_call', [{ to: contract, data: TOTAL_SUPPLY_SIG }, 'latest'], 10000)
-              if (result && result !== '0x') {
-                const parsed = parseInt(result, 16)
-                if (parsed > 0 && parsed < 10000000) supply = parsed
-              }
-            } catch (_) { }
-          }
-
-          let startId = null
-          if (!lockStart) {
-            try {
-              const result = await batchOwnerOf(rpcUrl, contract, [0])
-              if (hasOwner(result[0])) startId = 0
-            } catch (_) { }
-
-            if (startId === null) {
-              try {
-                const result = await batchOwnerOf(rpcUrl, contract, [1])
-                if (hasOwner(result[0])) startId = 1
-              } catch (_) { }
-            }
-          }
-
-          if (!lockEnd && supply !== null) {
-            const estimatedEnd = startId === 0 ? supply - 1 : supply
-            const actualMax = await findMaxTokenId(rpcUrl, contract, estimatedEnd)
-            if (actualMax !== null) supply = startId === 0 ? actualMax + 1 : actualMax
-          }
-
-          return { supply, startId }
-        }
-
-        const scheduleDetect = () => {
-          clearTimeout(detectTimer)
-          const contract = formState.contractAddr
-          if (!contract || contract.length < 42 || !contract.startsWith('0x')) {
-            detectState.message = ''
-            detectState.type = ''
-            return
-          }
-          detectState.message = 'Detecting token range...'
-          detectState.type = 'spin'
-          detectTimer = setTimeout(runDetect, 700)
-        }
-
-        const runDetect = async () => {
-          const chain = formState.chain
-          const rpc = getActiveRpc(chain)
-          const contract = formState.contractAddr
-          if (!rpc || !contract || !contract.startsWith('0x')) return
-
-          if (formState.userLockedStart && formState.userLockedEnd) {
-            detectState.message = 'Range set manually - clear fields to re-detect'
-            detectState.type = 'err'
-            return
-          }
-
-          detectState.detectingStart = !formState.userLockedStart
-          detectState.detectingEnd = !formState.userLockedEnd
-          detectState.message = 'Detecting token range...'
-          detectState.type = 'spin'
-
-          try {
-            let detected = await detectTokenRange(rpc, contract, formState.userLockedStart, formState.userLockedEnd)
-            if (!scanState.usingFallback && detected.supply === null && detected.startId === null && CHAIN_REGISTRY[chain].alchemyFallback !== false) {
-              detected = await detectTokenRange(alchemyRpc(chain), contract, formState.userLockedStart, formState.userLockedEnd)
-            }
-
-            const endVal = (!formState.userLockedEnd && detected.supply !== null)
-              ? (detected.startId === 0 ? detected.supply - 1 : detected.supply)
-              : null
-
-            const parts = [
-              formatField('Start', formState.userLockedStart, formState.tokenStart, detected.startId,
-                v => { formState.tokenStart = String(v) }),
-              formatField('End', formState.userLockedEnd, formState.tokenEnd, endVal,
-                v => { formState.tokenEnd = String(v) })
-            ]
-
-            const success = (!formState.userLockedStart && detected.startId !== null) || (!formState.userLockedEnd && detected.supply !== null)
-            detectState.message = `${success ? 'OK ' : 'WARN '}${parts.join('  \u00b7  ')}`
-            detectState.type = success ? 'ok' : 'err'
-          } catch (e) {
-            detectState.message = `Detection failed: ${String(e.message || '').slice(0, 60)}`
-            detectState.type = 'err'
-          } finally {
-            detectState.detectingStart = false
-            detectState.detectingEnd = false
-          }
-        }
-
-        // ── Scanning ──
-        const scanTokenIds = async (chain, contract, tokenIds, concurrency, batchSize, scanDelayMs, hooks) => {
-          const total = tokenIds.length
-          let done = 0
-          let idx = 0
-          const t0 = Date.now()
-
-          const worker = async () => {
-            while (idx < tokenIds.length && !hooks.shouldStop()) {
-              const batch = tokenIds.slice(idx, idx + batchSize)
-              idx += batch.length
-
-              const results = await fetchBatchWithRetry(chain, contract, batch, hooks)
-              if (results) hooks.onBatchResults(batch, results)
-              else hooks.onBatchFailed(batch)
-
-              done += batch.length
-              hooks.onProgress(done, total, t0)
-
-              if (scanDelayMs > 0 && idx < tokenIds.length && !hooks.shouldStop()) {
-                await sleep(scanDelayMs)
-              }
-            }
-          }
-
-          await Promise.all(Array.from({ length: concurrency }, () => worker()))
-        }
-
-        const startScan = async () => {
-          if (scanState.scanning) return
-          scanState.scanning = true
-          hideStatus()
-
-          const contract = formState.contractAddr
-          if (!contract || !/^0x[0-9a-fA-F]{40}$/.test(contract)) {
-            showStatus('Enter a valid contract address (0x followed by 40 hex characters).', 'error')
-            scanState.scanning = false
-            return
-          }
-
-          const active = ranges.value
-            .map(r => ({ min: +r.min || 0, max: r.noLimit ? Infinity : (+r.max || 0), color: r.color, noLimit: r.noLimit }))
-          if (!active.length) {
-            showStatus('Define at least one valid range.', 'error')
-            scanState.scanning = false
-            return
-          }
-
-          const tokenStart = parseInt(formState.tokenStart, 10)
-          const tokenEnd = parseInt(formState.tokenEnd, 10)
-          if (isNaN(tokenStart) || isNaN(tokenEnd)) {
-            showStatus('Token range not detected yet. Enter values manually or wait for auto-detect.', 'error')
-            scanState.scanning = false
-            return
-          }
-
-          if (tokenEnd < tokenStart) {
-            showStatus('Token end must be greater than or equal to token start.', 'error')
-            scanState.scanning = false
-            return
-          }
-
-          const chainCfg = CHAIN_REGISTRY[formState.chain]
-          const concurrency = chainCfg.concurrency || 10
-          const batchSz = chainCfg.batchSize || 20
-          const scanDelayMs = chainCfg.scanDelayMs || 0
-
-          scanState.holderMap = {}
-          scanState.failedIds = new Set()
-          scanState.logs = []
-          scanState.usingFallback = !chainCfg.publicRpc
-          scanState.progressPercent = 0
-          scanState.progressLabel = '\u2014'
-          scanState.failedInfo = ''
-          scanState.bucketed = []
-          scanState.showProgress = true
-          scanState.showStats = true
-          scanState.showLog = true
-          scanState.showResults = false
-
-          const activeRpc = getActiveRpc(formState.chain)
-          log('info', `Contract   : ${contract}`)
-          log('info', `Chain      : ${chainCfg.label}`)
-          log('info', `RPC        : ${activeRpc}${scanState.usingFallback ? ' (Alchemy)' : ' (public)'}`)
-          log('info', 'Method     : ownerOf(tokenId) - immune to log limits')
-          log('info', `Token range: ${tokenStart} -> ${tokenEnd} (${(tokenEnd - tokenStart + 1).toLocaleString()} tokens)`)
-          log('info', `Batch size : ${batchSz} per request \u00b7 ${concurrency} parallel workers`)
-          if (scanDelayMs > 0) {
-            log('info', `Delay      : ${scanDelayMs}ms between batches`)
-          }
-
-          const allIds = Array.from({ length: tokenEnd - tokenStart + 1 }, (_, i) => tokenStart + i)
-
-          try {
-            await scanTokenIds(formState.chain, contract.toLowerCase(), allIds, concurrency, batchSz, scanDelayMs, {
-              shouldStop: () => false,
-              getActiveRpc,
-              isUsingFallback: () => scanState.usingFallback,
-              setUsingFallback: (v) => { scanState.usingFallback = v },
-              log,
-              onBatchFailed: (batch) => {
-                batch.forEach(id => scanState.failedIds.add(id))
-                log('error', `Batch ${batch[0]}-${batch[batch.length - 1]}: failed after 5 retries`)
-              },
-              onBatchResults: (batch, results) => {
-                let found = 0
-                for (let i = 0; i < batch.length; i++) {
-                  const tokenId = batch[i]
-                  const entry = i < results.length ? results[i] : null
-                  if (!entry || entry.error || !entry.result || entry.result === '0x') {
-                    scanState.failedIds.add(tokenId)
-                    continue
-                  }
-                  const owner = decodeOwner(entry.result)
-                  if (owner && owner !== ZERO_ADDR) {
-                    scanState.holderMap[tokenId] = owner
-                    found++
-                  } else {
-                    scanState.failedIds.add(tokenId)
-                  }
-                }
-                if (found > 0) log('ok', `Token IDs ${batch[0]}-${batch[batch.length - 1]}: ${found} owners found`)
-              },
-              onProgress
-            })
-
-            const ownerMap = {}
-            Object.keys(scanState.holderMap).forEach(tokenId => {
-              const owner = scanState.holderMap[tokenId]
-              ownerMap[owner] = (ownerMap[owner] || 0) + 1
-            })
-
-            const holderSet = new Set(Object.values(scanState.holderMap))
-            log('ok', `Done. ${holderSet.size} unique holders \u00b7 ${Object.keys(scanState.holderMap).length} tokens \u00b7 ${scanState.failedIds.size} not found/burned`)
-
-            if (scanState.failedIds.size > 0) {
-              scanState.failedInfo = `${scanState.failedIds.size} token IDs returned no owner (not yet minted, burned, or RPC error): ${[...scanState.failedIds].join(', ')}`
-            }
-
-            scanState.explorerBase = chainCfg.explorer
-            scanState.explorerAddrPath = chainCfg.addressPath || '/address/'
-            scanState.shortContract = `${contract.slice(0, 6)}...${contract.slice(-4)}`
-            scanState.totalHolders = Object.keys(ownerMap).length.toLocaleString()
-            scanState.bucketed = active.map(range => {
-              const wallets = Object.entries(ownerMap)
-                .filter(([_, count]) => count >= range.min && count <= range.max)
-                .sort((a, b) => b[1] - a[1])
-                .map(([address, count]) => ({ address, count }))
-              return { ...range, wallets }
-            })
-
-            scanState.bucketed.forEach((_, idx) => { tierOpen[idx] = true })
-            scanState.showResults = true
-          } catch (e) {
-            showStatus(String(e.message || 'Scan failed.'), 'error')
-            log('error', `ERROR: ${String(e.message || 'Scan failed.')}`)
-          } finally {
-            scanState.scanning = false
-          }
-        }
-
-        // ── Supporting Helpers ──
-        const decodeOwner = (hexResult) => {
-          if (!hexResult || hexResult === '0x' || hexResult.length < 66) return null
-          return `0x${hexResult.slice(-40).toLowerCase()}`
-        }
-
-        const hasOwner = (resp) => {
-          const owner = resp && !resp.error ? decodeOwner(resp.result) : null
-          return owner && owner !== ZERO_ADDR
-        }
-
-        const formatField = (name, locked, manualValue, detected, setValue) => {
-          if (locked) return `${name}: ${manualValue} (manual)`
-          if (detected !== null) {
-            setValue(detected)
-            return `${name}: ${detected}`
-          }
-          return `${name}: unknown`
-        }
-
-        const onProgress = (done, total, t0) => {
-          const pct = Math.round((done / total) * 100)
-          const elapsed = (Date.now() - t0) / 1000
-          const rate = done / Math.max(elapsed, 0.1)
-          const eta = rate > 0 ? Math.round((total - done) / rate) : null
-          const etaText = eta !== null ? ` \u00b7 ~${fmtTime(eta)} remaining` : ''
-          scanState.progressPercent = pct
-          scanState.progressLabel = `${pct}% \u00b7 ${done.toLocaleString()}/${total.toLocaleString()} tokens queried${etaText}`
-        }
-
-        const fetchBatchWithRetry = async (chain, contract, batch, hooks) => {
-          for (let attempt = 0; attempt < 5; attempt++) {
-            try {
-              return await batchOwnerOf(hooks.getActiveRpc(chain), contract, batch)
-            } catch (e) {
-              if (!hooks.isUsingFallback() && attempt === 0 && CHAIN_REGISTRY[chain].alchemyFallback !== false) {
-                hooks.setUsingFallback(true)
-                hooks.log('warning', 'Public RPC failed, switching to Alchemy fallback...')
-                try {
-                  return await batchOwnerOf(alchemyRpc(chain), contract, batch)
-                } catch (_) { }
-              }
-
-              if (attempt < 4) {
-                hooks.log('warning', `Batch ${batch[0]}-${batch[batch.length - 1]}: retry ${attempt + 1}/4 (${String(e.message || '').slice(0, 45)})`)
-                await sleep(RETRY_DELAYS_MS[attempt])
-              }
-            }
-          }
-
-          return null
-        }
-
-        // ── UI Helpers ──
-        const rangeLabel = (r) => r.noLimit ? `${r.min}+` : `${r.min} - ${r.max}`
-
-        const addRange = () => {
-          const color = PALETTE[ranges.value.length % PALETTE.length]
-          const last = ranges.value.length ? ranges.value[ranges.value.length - 1].max || 0 : 0
-          ranges.value.push({ min: last + 1, max: last + 10, noLimit: false, color })
-        }
-
-        const removeRange = (index) => { ranges.value.splice(index, 1) }
-
-        const toggleNoLimit = (index, checked) => { ranges.value[index].noLimit = checked }
-
-        const onContractInput = () => scheduleDetect()
-
-        const onTokenStartInput = () => {
-          formState.userLockedStart = String(formState.tokenStart).trim() !== ''
-          if (!formState.userLockedStart) scheduleDetect()
-        }
-
-        const onTokenEndInput = () => {
-          formState.userLockedEnd = String(formState.tokenEnd).trim() !== ''
-          if (!formState.userLockedEnd) scheduleDetect()
-        }
-
-        const onChainChange = () => {
-          scanState.usingFallback = !CHAIN_REGISTRY[formState.chain].publicRpc
-          scheduleDetect()
-        }
-
-        const toggleBody = (index) => { tierOpen[index] = !tierOpen[index] }
-
-        const isTierOpen = (index) => tierOpen[index] !== false
-
-        const copyBucket = async (index, event) => {
-          const bucket = scanState.bucketed[index]
-          const text = bucket.wallets.map(w => `${w.address},${w.count}`).join('\n')
-          const btn = event.target
-          const original = btn.textContent
-          try {
-            await navigator.clipboard.writeText(text)
-            btn.textContent = 'Copied!'
-          } catch {
-            btn.textContent = 'Failed'
-          }
-          await sleep(2000)
-          btn.textContent = original
-        }
-
-        const copyText = async (address, count, event) => {
-          const btn = event.target
-          const original = btn.textContent
-          try {
-            await navigator.clipboard.writeText(`${address},${count}`)
-            btn.textContent = '\u2713'
-          } catch {
-            btn.textContent = '\u2717'
-          }
-          await sleep(1500)
-          btn.textContent = original
-        }
-
-        // ── Lifecycle ──
-        onChainChange()
-
-        return {
-          CHAIN_REGISTRY, chainOrder,
-          formState, detectState, statusState, scanState,
-          ranges, logBoxRef, stats,
-          rangeLabel,
-          onChainChange, onContractInput, onTokenStartInput, onTokenEndInput,
-          addRange, removeRange, toggleNoLimit,
-          startScan, clearLog,
-          toggleBody, isTierOpen,
-          copyBucket, copyText
-        }
-      }
-    })
-
-    app.mount('#app')
-  </script>
+  <script type="module" src="js/main.js"></script>
 </body>
-
 </html>
