@@ -13,7 +13,7 @@
 //              The pacer in scan.js raises/lowers this at runtime.
 //   delay    - initial pause in ms between batches, also tuned at runtime.
 
-export const ALCHEMY_KEY = 'tPWqgHC6-1dU8Y9Wdc-50dRrcc4nhsIh'
+export const ALCHEMY_KEY = 'fMmgGZu3G9n94wUFQw7Tw'
 
 export const CHAINS = {
   'eth-mainnet': {
@@ -131,6 +131,15 @@ export const CHAINS = {
     batch: 20,
     workers: 1,
     delay: 0,
+  },
+  'robinhood-mainnet': {
+    label: 'Robinhood',
+    explorer: 'https://explorer.mainnet.chain.robinhood.com',
+    rpcs: ['https://rpc.mainnet.chain.robinhood.com'],
+    alchemy: true,
+    batch: 20,
+    workers: 1,
+    delay: 500, // public endpoint 429s hard above ~34 calls/s
   },
 }
 
