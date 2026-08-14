@@ -107,6 +107,13 @@
       border-color: #aaa;
     }
 
+    .field-help {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #aaa;
+    }
+
     #drop_zone {
       width: 100%;
       min-height: 190px;
@@ -135,16 +142,119 @@
       color: #242424;
     }
 
-    #processing-status {
-      font-size: 13px;
-      margin-top: 12px;
+    .status {
       display: none;
+      margin-top: 20px;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .status.error {
+      display: block;
+      background: #fff0f0;
+      color: #c04040;
+      border: 1px solid #f0cece;
+    }
+
+    .progress-section {
+      display: none;
+      margin-top: 28px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: #ebebea;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #242424;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: #aaa;
+      text-align: right;
+    }
+
+    .log-wrap {
+      margin-top: 20px;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .log-title {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
       color: #888;
     }
 
-    .green {
-      color: #16a34a;
+    .btn-clear-log {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 11px;
+      color: #ccc;
+      cursor: pointer;
+      transition: color 0.15s;
     }
+
+    .btn-clear-log:hover {
+      color: #888;
+    }
+
+    .log-box {
+      background: #fff;
+      border: 1px solid #e8e8e6;
+      border-radius: 8px;
+      padding: 14px;
+      height: 220px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .log-box::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .log-box::-webkit-scrollbar-thumb {
+      background: #e0e0de;
+      border-radius: 2px;
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-time {
+      color: #ccc;
+      flex-shrink: 0;
+    }
+
+    .info { color: #242424; }
+    .warning { color: #d97706; }
+    .error { color: #dc2626; }
 
     #sticky-link {
       position: fixed;
@@ -192,9 +302,23 @@
     <div id="custom-endpoint-container">
       <label id="custom-endpoint-label" for="custom-endpoint-input">Custom RPC Endpoint</label>
       <input id="custom-endpoint-input" type="text" placeholder="Enter custom RPC endpoint key">
+      <div class="field-help">Optional. Only needed for ENS. Example: https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY</div>
     </div>
     <div id="drop_zone">Drop your .txt files or .zip file here</div>
-    <div id="processing-status">Please wait...</div>
+    <div id="processing-status" class="status"></div>
+    <div id="progress-section" class="progress-section">
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+      <div id="progress-label" class="progress-label">-</div>
+    </div>
+    <div class="log-wrap">
+      <div class="log-header">
+        <span class="log-title">Activity log</span>
+        <button class="btn-clear-log" id="clear-log-button">Clear</button>
+      </div>
+      <div class="log-box" id="log-pane"></div>
+    </div>
   </div>
   <script>
     let dropZone = document.getElementById('drop_zone');
@@ -202,9 +326,79 @@
     let resolveEnsCheckbox = document.getElementById('resolve-ens-checkbox');
     let customEndpointInput = document.getElementById('custom-endpoint-input');
     let processingStatus = document.getElementById('processing-status');
+    let progressSection = document.getElementById('progress-section');
+    let progressFill = document.getElementById('progress-fill');
+    let progressLabel = document.getElementById('progress-label');
+    let clearLogButton = document.getElementById('clear-log-button');
+    let logPane = document.getElementById('log-pane');
     let dragDepth = 0;
 
     let provider = new ethers.providers.getDefaultProvider();
+
+    function syncCustomEndpointVisibility() {
+      customEndpointInput.parentElement.style.display = resolveEnsCheckbox.checked ? 'block' : 'none';
+    }
+
+    function formatLogArg(arg) {
+      if (arg instanceof Error) return arg.message;
+      if (typeof arg === 'object') return JSON.stringify(arg);
+      return String(arg);
+    }
+
+    function addLog(kind, args) {
+      const pinned = logPane.scrollTop + logPane.clientHeight >= logPane.scrollHeight - 24;
+      const entry = document.createElement('div');
+      const time = document.createElement('span');
+      const text = document.createElement('span');
+
+      entry.className = 'log-entry';
+      time.className = 'log-time';
+      text.className = kind;
+      time.innerText = new Date().toLocaleTimeString();
+      text.innerText = args.map(formatLogArg).join(' ');
+
+      entry.append(time, text);
+      logPane.append(entry);
+
+      if (pinned) {
+        logPane.scrollTop = logPane.scrollHeight;
+      }
+    }
+
+    ['log', 'warn', 'error'].forEach(function(method) {
+      const originalMethod = console[method].bind(console);
+      const kind = method === 'log' ? 'info' : method === 'warn' ? 'warning' : method;
+
+      console[method] = function(...args) {
+        originalMethod(...args);
+        addLog(kind, args);
+      };
+    });
+
+    clearLogButton.addEventListener('click', function() {
+      logPane.innerHTML = '';
+    });
+
+    resolveEnsCheckbox.addEventListener('change', syncCustomEndpointVisibility);
+    syncCustomEndpointVisibility();
+
+    function hideStatus() {
+      processingStatus.style.display = 'none';
+      processingStatus.className = 'status';
+      processingStatus.innerText = '';
+    }
+
+    function showError(message) {
+      processingStatus.style.display = 'block';
+      processingStatus.className = 'status error';
+      processingStatus.innerText = message;
+    }
+
+    function updateProgress(pct, text) {
+      progressSection.style.display = 'block';
+      progressFill.style.width = `${pct}%`;
+      progressLabel.innerText = text;
+    }
 
     dropZone.addEventListener('dragenter', function(event) {
       event.preventDefault();
@@ -230,9 +424,15 @@
       event.preventDefault();
       dragDepth = 0;
       dropZone.classList.remove('is-dragover');
-      processingStatus.style.display = 'block';
-      processingStatus.innerText = 'Please wait...';
-      await processFiles(Array.from(event.dataTransfer.files).sort((a, b) => a.name.localeCompare(b.name)));
+      hideStatus();
+      updateProgress(0, 'Reading files...');
+      try {
+        await processFiles(Array.from(event.dataTransfer.files).sort((a, b) => a.name.localeCompare(b.name)));
+      } catch (error) {
+        console.error(error);
+        showError(`Error: ${error.message}`);
+        updateProgress(0, 'Failed');
+      }
     });
 
     async function processFiles(files) {
@@ -246,9 +446,13 @@
         provider = new ethers.providers.JsonRpcProvider(customEndpoint);
       }
 
-      for (let file of files) {
+      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+        let file = files[fileIndex];
+        updateProgress(Math.round((fileIndex / files.length) * 20), `Reading ${file.name}...`);
+
         if (file.name.endsWith('.txt')) {
           let text = await file.text();
+          text = text.replace(/^\uFEFF/, '');
           let lines = text.split('\n');
           console.log(`File ${file.name} contains ${lines.length} lines.`);
           totalLinesBeforeDedupe += lines.length;
@@ -259,6 +463,7 @@
             if (filename.endsWith('.txt')) {
               let file = zip.file(filename);
               let content = await file.async('text');
+              content = content.replace(/^\uFEFF/, '');
               let lines = content.split('\n');
               console.log(`File ${filename} contains ${lines.length} lines.`);
               totalLinesBeforeDedupe += lines.length;
@@ -268,51 +473,66 @@
         }
       }
 
+      updateProgress(25, `${totalLinesBeforeDedupe.toLocaleString()} lines loaded`);
+
       if (ignoreCaseCheckbox.checked) {
+        updateProgress(30, 'Normalizing case...');
         mergedLines = mergedLines.map(line => line.toLowerCase());
       }
 
-	  mergedLines = mergedLines.map(line => line.trimEnd());
+      updateProgress(40, 'Removing empty lines...');
+      mergedLines = mergedLines.map(line => line.trimEnd()).filter(line => line.length > 0);
 
       if (resolveEnsCheckbox.checked) {
-		console.log(`Resolve ENS Checked`);
-		const promises = mergedLines.map(async (line, i) => {
-		  if (!ethers.utils.isAddress(line)) {
-			console.log(`Resolving ${line}`);
-			try {
-			  const address = await provider.resolveName(line);
-			  if (address) {
-				console.log(`ENS name ${line} resolved to ${address}`);
-				return address;
-			  } else {
-				console.warn(`Failed to resolve ENS name ${line}: No address returned.`);
-				return line;
-			  }
-			} catch (err) {
-			  console.error(`Failed to resolve ENS name ${line}: ${err}`);
-			  return line;
-			}
-		  } else {
-			return line;
-		  }
-		});
+        console.log(`Resolve ENS Checked`);
+        let resolved = 0;
+        const promises = mergedLines.map(async (line) => {
+          if (!ethers.utils.isAddress(line)) {
+            console.log(`Resolving ${line}`);
+            try {
+              const address = await provider.resolveName(line);
+              if (address) {
+                console.log(`ENS name ${line} resolved to ${address}`);
+                return address;
+              } else {
+                console.warn(`Failed to resolve ENS name ${line}: No address returned.`);
+                return line;
+              }
+            } catch (err) {
+              console.error(`Failed to resolve ENS name ${line}: ${err}`);
+              return line;
+            }
+          } else {
+            return line;
+          }
+        }).map(async (promise) => {
+          const line = await promise;
+          resolved += 1;
+          updateProgress(40 + Math.round((resolved / mergedLines.length) * 35), `Resolving ENS... ${resolved.toLocaleString()}/${mergedLines.length.toLocaleString()}`);
+          return line;
+        });
 
         mergedLines = await Promise.all(promises);
       }
-	  
-	  mergedLines = mergedLines.map(line => ethers.utils.getAddress(line)); // convert to proper case
-	  
+
+      updateProgress(80, 'Normalizing addresses...');
+      mergedLines = mergedLines.map(line => {
+        if (ethers.utils.isAddress(line)) return ethers.utils.getAddress(line); // convert addresses to proper case
+        if (/\.eth$/i.test(line)) return line;
+        throw new Error(`Invalid address or ENS name: ${line}`);
+      });
+
+      updateProgress(90, 'Removing duplicates...');
       const uniqueLinesSet = new Set(mergedLines);
       const uniqueLines = [...uniqueLinesSet];
 
       console.log(`Removed ${totalLinesBeforeDedupe - uniqueLines.length} duplicate lines.`);
-      
+
       const blob = new Blob([uniqueLines.join('\n')], { type: 'text/plain' });
       saveAs(blob, `output-${Date.now()}.txt`);
       console.log(`Final file contains ${uniqueLines.length} unique lines.`);
-      
-      processingStatus.innerText = 'Done!';
-      processingStatus.className = 'green';
+
+      updateProgress(100, `100% - ${uniqueLines.length.toLocaleString()} unique lines exported`);
     }
   </script>
 </body>
