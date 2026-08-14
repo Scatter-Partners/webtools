@@ -280,36 +280,36 @@
         mergedLines = mergedLines.map(line => line.toLowerCase());
       }
 
-	  mergedLines = mergedLines.map(line => line.trimEnd()).filter(line => line.length > 0);
+      mergedLines = mergedLines.map(line => line.trimEnd()).filter(line => line.length > 0);
 
       if (resolveEnsCheckbox.checked) {
-		console.log(`Resolve ENS Checked`);
-		const promises = mergedLines.map(async (line, i) => {
-		  if (!ethers.utils.isAddress(line)) {
-			console.log(`Resolving ${line}`);
-			try {
-			  const address = await provider.resolveName(line);
-			  if (address) {
-				console.log(`ENS name ${line} resolved to ${address}`);
-				return address;
-			  } else {
-				console.warn(`Failed to resolve ENS name ${line}: No address returned.`);
-				return line;
-			  }
-			} catch (err) {
-			  console.error(`Failed to resolve ENS name ${line}: ${err}`);
-			  return line;
-			}
-		  } else {
-			return line;
-		  }
-		});
+        console.log(`Resolve ENS Checked`);
+        const promises = mergedLines.map(async (line, i) => {
+          if (!ethers.utils.isAddress(line)) {
+            console.log(`Resolving ${line}`);
+            try {
+              const address = await provider.resolveName(line);
+              if (address) {
+                console.log(`ENS name ${line} resolved to ${address}`);
+                return address;
+              } else {
+                console.warn(`Failed to resolve ENS name ${line}: No address returned.`);
+                return line;
+              }
+            } catch (err) {
+              console.error(`Failed to resolve ENS name ${line}: ${err}`);
+              return line;
+            }
+          } else {
+            return line;
+          }
+        });
 
         mergedLines = await Promise.all(promises);
       }
-	  
-	  mergedLines = mergedLines.map(line => ethers.utils.getAddress(line)); // convert to proper case
-	  
+
+      mergedLines = mergedLines.map(line => ethers.utils.getAddress(line)); // convert to proper case
+
       const uniqueLinesSet = new Set(mergedLines);
       const uniqueLines = [...uniqueLinesSet];
 
