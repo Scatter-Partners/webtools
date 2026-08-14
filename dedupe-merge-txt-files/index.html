@@ -516,7 +516,11 @@
       }
 
       updateProgress(80, 'Normalizing addresses...');
-      mergedLines = mergedLines.map(line => ethers.utils.getAddress(line)); // convert to proper case
+      mergedLines = mergedLines.map(line => {
+        if (ethers.utils.isAddress(line)) return ethers.utils.getAddress(line); // convert addresses to proper case
+        if (/\.eth$/i.test(line)) return line;
+        throw new Error(`Invalid address or ENS name: ${line}`);
+      });
 
       updateProgress(90, 'Removing duplicates...');
       const uniqueLinesSet = new Set(mergedLines);
