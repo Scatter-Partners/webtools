@@ -232,7 +232,13 @@
       dropZone.classList.remove('is-dragover');
       processingStatus.style.display = 'block';
       processingStatus.innerText = 'Please wait...';
-      await processFiles(Array.from(event.dataTransfer.files).sort((a, b) => a.name.localeCompare(b.name)));
+      try {
+        await processFiles(Array.from(event.dataTransfer.files).sort((a, b) => a.name.localeCompare(b.name)));
+      } catch (error) {
+        console.error(error);
+        processingStatus.innerText = `Error: ${error.message}`;
+        processingStatus.className = '';
+      }
     });
 
     async function processFiles(files) {
