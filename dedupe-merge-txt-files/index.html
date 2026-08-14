@@ -255,6 +255,7 @@
       for (let file of files) {
         if (file.name.endsWith('.txt')) {
           let text = await file.text();
+          text = text.replace(/^\uFEFF/, '');
           let lines = text.split('\n');
           console.log(`File ${file.name} contains ${lines.length} lines.`);
           totalLinesBeforeDedupe += lines.length;
@@ -265,6 +266,7 @@
             if (filename.endsWith('.txt')) {
               let file = zip.file(filename);
               let content = await file.async('text');
+              content = content.replace(/^\uFEFF/, '');
               let lines = content.split('\n');
               console.log(`File ${filename} contains ${lines.length} lines.`);
               totalLinesBeforeDedupe += lines.length;
